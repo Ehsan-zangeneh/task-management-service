@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 
 @RestController
@@ -27,15 +26,14 @@ public class TaskController {
     @GetMapping
     public Flux<TaskDto> findAll(@RequestParam(defaultValue = "0") int page,
                                  @RequestParam(defaultValue = "10") int size) {
-        return Mono.fromCallable(() -> taskService.findAll(page, size))
-                .subscribeOn(Schedulers.boundedElastic())
-                .flatMapMany(Flux::fromIterable);
+        log.info("Find all tasks with page {} and size {}", page, size);
+        return taskService.findAll(page, size);
     }
 
     @GetMapping("/{id}")
     public Mono<ResponseEntity<TaskDto>> findById(@PathVariable String id) {
-        return Mono.fromCallable(() -> taskService.findById(id))
-                .subscribeOn(Schedulers.boundedElastic())
+        log.info("Find task by id {}", id);
+        return taskService.findById(id)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.notFound().build()));
     }

@@ -9,8 +9,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,20 +21,24 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
 
-    public List<TaskDto> findAll(int page, int size) {
+    public Flux<TaskDto> findAll(int page, int size) {
         Pageable pageable = PageRequest.of(
                 page, size,
                 Sort.sort(Task.class).by(Task::getCreationDate).descending());
 
-        return  taskRepository.findAll(pageable).stream()
-                .map(this::convertToDto)
-                .toList();
+        return Mono.fromCallable(() -> taskRepository.findAll(pageable))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMapMany(
+                        tasks -> Flux.fromStream(tasks.stream()
+                                .map(this::convertToDto))
+                );
     }
 
-    public TaskDto findById(String taskId) {
-        return  taskRepository.findById(taskId)
-                .map(this::convertToDto)
-                .orElseThrow(() -> new RuntimeException("Task by id:{%s} not found".formatted(taskId)));
+    public Mono<TaskDto> findById(String taskId) {
+        return  Mono.fromCallable(() -> taskRepository.findById(taskId)
+                        .map(this::convertToDto)
+                        .orElseThrow(() -> new RuntimeException("Task by id:{%s} not found".formatted(taskId))))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     private TaskDto convertToDto(Task task) {
