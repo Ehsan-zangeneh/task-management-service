@@ -1,18 +1,23 @@
 package com.task.management.controller;
 
 
+import com.task.management.dto.TaskCreationRequestDto;
 import com.task.management.dto.TaskDto;
 import com.task.management.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 
 @RestController
@@ -27,15 +32,31 @@ public class TaskController {
     public Flux<TaskDto> findAll(@RequestParam(defaultValue = "0") int page,
                                  @RequestParam(defaultValue = "10") int size) {
         log.info("Find all tasks with page {} and size {}", page, size);
-        return taskService.findAll(page, size);
+        return Mono.fromCallable(() -> taskService.findAll(page, size))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMapMany(Flux::fromIterable);
     }
 
     @GetMapping("/{id}")
     public Mono<ResponseEntity<TaskDto>> findById(@PathVariable String id) {
         log.info("Find task by id {}", id);
-        return taskService.findById(id)
+        return Mono.fromCallable(() -> taskService.findById(id))
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.notFound().build()));
+    }
+
+    @PostMapping
+    public Mono<ResponseEntity<TaskDto>> save(@RequestBody Mono<TaskCreationRequestDto> taskCreationMono) {
+        return taskCreationMono
+                .flatMap(this::persist)
+                .map(taskDto -> ResponseEntity.status(HttpStatus.CREATED).body(taskDto));
+
+    }
+
+    private Mono<TaskDto> persist(TaskCreationRequestDto taskCreationRequestDto) {
+        log.info("Persist task {}", taskCreationRequestDto);
+        return Mono.fromCallable(() -> taskService.save(taskCreationRequestDto))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
 }
