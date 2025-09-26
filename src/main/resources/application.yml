@@ -1,0 +1,15 @@
+server:
+  port: 9090
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/task_db
+    username: ehsan
+    password: ehsan
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
