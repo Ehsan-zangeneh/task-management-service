@@ -29,6 +29,12 @@ public class TaskService {
                 .toList();
     }
 
+    public TaskDto findById(String taskId) {
+        return  taskRepository.findById(taskId)
+                .map(this::convertToDto)
+                .orElseThrow(() -> new RuntimeException("Task by id:{%s} not found".formatted(taskId)));
+    }
+
     private TaskDto convertToDto(Task task) {
         return TaskDto.builder()
                 .id(task.getId())
