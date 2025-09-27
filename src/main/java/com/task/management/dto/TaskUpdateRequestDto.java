@@ -1,6 +1,7 @@
 package com.task.management.dto;
 
 import com.task.management.common.TaskConstants;
+import com.task.management.model.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Builder;
@@ -19,5 +20,6 @@ public class TaskUpdateRequestDto {
     String ownerId;
     @Pattern(regexp = TaskConstants.UUID, message = "Must be a valid UUID")
     String assigneeId;
+    TaskStatus status;
 
 }

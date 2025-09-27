@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 
 @RestController
@@ -52,9 +51,7 @@ public class TaskController {
     public Flux<TaskDto> findAll(@RequestParam(defaultValue = "0") int page,
                                  @RequestParam(defaultValue = "10") int size) {
         log.info("Find all tasks with page {} and size {}", page, size);
-        return Mono.fromCallable(() -> taskService.findAll(page, size))
-                .subscribeOn(Schedulers.boundedElastic())
-                .flatMapMany(Flux::fromIterable);
+        return taskService.findAll(page, size);
     }
 
     @Operation(summary = "Retrieve a task by id")
@@ -66,11 +63,10 @@ public class TaskController {
             ),
     })
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<TaskDto>> findById(@PathVariable String id) {
+    public ResponseEntity<Mono<TaskDto>> findById(@PathVariable String id) {
         log.info("Find task by id {}", id);
-        return Mono.fromCallable(() -> taskService.findById(id))
-                .subscribeOn(Schedulers.boundedElastic())
-                .map(ResponseEntity::ok);
+        var taskDto = taskService.findById(id);
+        return ResponseEntity.ok(taskDto);
     }
 
     @Operation(summary = "Create a new task")
@@ -79,23 +75,28 @@ public class TaskController {
             @ApiResponse(responseCode = "400", description = "Bad request"),
     })
     @PostMapping
-    public Mono<ResponseEntity<TaskDto>> save(@RequestBody Mono<TaskCreateRequestDto> taskCreationMono) {
-        return taskCreationMono
-                .flatMap(this::persist)
-                .map(taskDto -> ResponseEntity.status(HttpStatus.CREATED).body(taskDto));
-
+    public ResponseEntity<Mono<TaskDto>> create(@RequestBody TaskCreateRequestDto taskCreationMono) {
+        var taskDto = taskService.save(taskCreationMono);
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskDto);
     }
 
+    @Operation(summary = "Update a task")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful update of a task",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = TaskDto.class))
+                    )
+            )
+    })
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<TaskDto>> update(@PathVariable String id, @RequestBody Mono<TaskUpdateRequestDto> taskUpdateRequestDtoMono) {
-        log.info("Update task by id{} with data {}", id,  taskUpdateRequestDtoMono);
-        return taskUpdateRequestDtoMono.flatMap(taskRequestDto ->
-                        Mono.fromCallable(() -> taskService.update(TaskUpdateDto.builder()
-                                        .id(id)
-                                        .taskUpdateRequestDto(taskRequestDto)
-                                        .build()))
-                                .subscribeOn(Schedulers.boundedElastic()))
-                .map(ResponseEntity::ok);
+    public ResponseEntity<Mono<TaskDto>> update(@PathVariable String id, @RequestBody TaskUpdateRequestDto taskUpdateRequestDto) {
+        log.info("Update task by id{} with data {}", id,  taskUpdateRequestDto);
+        var updatedTaskDto = taskService.update(TaskUpdateDto.builder()
+                .id(id)
+                .taskUpdateRequestDto(taskUpdateRequestDto)
+                .build());
+        return ResponseEntity.ok(updatedTaskDto);
     }
 
     @Operation(summary = "Delete a task by its id")
@@ -103,19 +104,10 @@ public class TaskController {
             @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
     })
     @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<String>> delete(@PathVariable String id) {
+    public ResponseEntity<Mono<String>> delete(@PathVariable String id) {
         log.info("Delete task by id {}", id);
-        return Mono.fromCallable(() -> taskService.delete(id))
-                .map(deletedId -> ResponseEntity.status(HttpStatus.NO_CONTENT).body(deletedId))
-                .subscribeOn(Schedulers.boundedElastic());
-    }
-
-
-
-    private Mono<TaskDto> persist(TaskCreateRequestDto taskCreationRequestDto) {
-        log.info("Persist task {}", taskCreationRequestDto);
-        return Mono.fromCallable(() -> taskService.save(taskCreationRequestDto))
-                .subscribeOn(Schedulers.boundedElastic());
+        var deletedTaskId = taskService.delete(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(deletedTaskId);
     }
 
 }

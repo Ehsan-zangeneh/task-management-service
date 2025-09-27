@@ -12,13 +12,12 @@ import com.task.management.repository.TaskRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
+import java.time.ZonedDateTime;
 
 
 @Service
@@ -29,56 +28,59 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
 
-    public List<TaskDto> findAll(int page, int size) {
-        Pageable pageable = PageRequest.of(
-                page, size,
-                Sort.sort(Task.class).by(Task::getCreationDate).descending());
-
-        var tasks = taskRepository.findAll(pageable);
-        return tasks.stream()
-                .map(this::convertToDto)
-                .toList();
+    public Flux<TaskDto> findAll(int page, int size) {
+        var offset = page * size;
+        var tasks = taskRepository.findAllPaged(size, offset);
+        return tasks.map(this::convertToDto);
     }
 
-    public TaskDto findById(String taskId) {
+    public Mono<TaskDto> findById(String taskId) {
         log.info("Find task by id {}", taskId);
         return taskRepository.findById(taskId)
-                .map(this::convertToDto)
-                .orElseThrow(() -> new TaskNotFoundException("Task by id:{%s} not found".formatted(taskId)));
+                .switchIfEmpty(Mono.error(
+                        new TaskNotFoundException("Task not found with id: ".formatted(taskId))
+                ))
+                .map(this::convertToDto);
     }
 
-    public TaskDto save(@Valid TaskCreateRequestDto taskCreationRequestDto) {
+    public Mono<TaskDto> save(@Valid TaskCreateRequestDto taskCreationRequestDto) {
         log.info("Save task {}", taskCreationRequestDto);
         var task = taskRepository.save(Task.builder()
                 .assigneeId(taskCreationRequestDto.getAssigneeId())
                 .description(taskCreationRequestDto.getDescription())
                 .ownerId(taskCreationRequestDto.getOwnerId())
                 .title(taskCreationRequestDto.getTitle())
+                .creationDate(ZonedDateTime.now())
+                .status(TaskStatus.Todo)
                 .build());
-        return convertToDto(task);
+        return task.map(this::convertToDto);
     }
 
-    public TaskDto update(TaskUpdateDto taskUpdateDto) {
+    public Mono<TaskDto> update(TaskUpdateDto taskUpdateDto) {
         log.info("Update task {}", taskUpdateDto);
         return taskRepository.findById(taskUpdateDto.getId())
+                .switchIfEmpty(Mono.error(
+                        new TaskNotFoundException("Task not found with id: ".formatted(taskUpdateDto.getId()))
+                ))
                 .map(t -> merge(t, taskUpdateDto.getTaskUpdateRequestDto()))
-                .map(taskRepository::save)
-                .map(this::convertToDto)
-                .orElseThrow(() ->  new TaskNotFoundException("Task by id:{%s} not found".formatted(taskUpdateDto.getId())));
+                .flatMap(taskRepository::save)
+                .map(this::convertToDto);
     }
 
-    public String delete(String taskId) {
+    public Mono<String> delete(String taskId) {
         log.info("Delete task by id {}", taskId);
-        var task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new TaskNotFoundException("Task by id:{%s} not found".formatted(taskId)));
-        if(!checkValidityForRemove(task)) {
-            throw new IllegalTaskManagementOperationException(
-                    "The task {%s} not valid for deletion".formatted(task)
-            );
-        }
-        taskRepository.deleteById(taskId);
-        return taskId;
+        return taskRepository.findById(taskId)
+                .switchIfEmpty(Mono.error(new TaskNotFoundException("Task not found with id: " + taskId)))
+                .flatMap(task -> {
+                    if (!checkValidityForRemove(task)) {
+                        return Mono.error(new IllegalTaskManagementOperationException(
+                                "The task {%s} not valid for deletion".formatted(task.getId())
+                        ));
+                    }
+                    return taskRepository.deleteById(taskId).thenReturn(taskId);
+                });
     }
+
 
     private boolean checkValidityForRemove(Task task) {
         return task.getStatus().equals(TaskStatus.Todo)
@@ -90,6 +92,8 @@ public class TaskService {
                 .assigneeId(taskUpdateRequestDto.getAssigneeId())
                 .description(taskUpdateRequestDto.getDescription())
                 .title(taskUpdateRequestDto.getTitle())
+                .status(taskUpdateRequestDto.getStatus())
+                .modificationDate(ZonedDateTime.now())
                 .build();
     }
 

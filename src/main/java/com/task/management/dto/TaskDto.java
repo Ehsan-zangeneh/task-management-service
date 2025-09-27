@@ -5,12 +5,13 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 @Builder
 @Value
 public class TaskDto {
 
-    String id;
+    UUID id;
     String title;
     String description;
     ZonedDateTime creationDate;
