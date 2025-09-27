@@ -6,7 +6,7 @@ import lombok.Value;
 
 @Builder
 @Value
-public class TaskCreationRequestDto {
+public class TaskRequestDto {
 
     String title;
     String description;

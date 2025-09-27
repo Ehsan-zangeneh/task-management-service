@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +21,7 @@ import java.time.ZonedDateTime;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Data
-@Builder
+@Builder(toBuilder = true)
 @Entity
 @SQLDelete(sql = "UPDATE task SET is_deleted = true WHERE id = ?")
 @Where(clause = "is_deleted = false")
@@ -37,5 +39,16 @@ public class Task {
     ZonedDateTime deleteDate;
     String ownerId;
     String assigneeId;
+
+    @PrePersist
+    protected void prePersist() {
+        this.creationDate = ZonedDateTime.now();
+        status = TaskStatus.Todo;
+    }
+
+    @PreUpdate
+    protected void preUpdate() {
+        this.modificationDate = ZonedDateTime.now();
+    }
 
 }

@@ -1,7 +1,8 @@
 package com.task.management.service;
 
-import com.task.management.dto.TaskCreationRequestDto;
+import com.task.management.dto.TaskRequestDto;
 import com.task.management.dto.TaskDto;
+import com.task.management.dto.TaskUpdateDto;
 import com.task.management.model.Task;
 import com.task.management.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Task by id:{%s} not found".formatted(taskId)));
     }
 
-    public TaskDto save(TaskCreationRequestDto taskCreationRequestDto) {
+    public TaskDto save(TaskRequestDto taskCreationRequestDto) {
         log.info("Save task {}", taskCreationRequestDto);
         var task = taskRepository.save(Task.builder()
                 .assigneeId(taskCreationRequestDto.getAssigneeId())
@@ -49,6 +50,22 @@ public class TaskService {
         return convertToDto(task);
     }
 
+    public TaskDto update(TaskUpdateDto taskUpdateDto) {
+        log.info("Update task {}", taskUpdateDto);
+        return taskRepository.findById(taskUpdateDto.getId())
+                .map(t -> merge(t, taskUpdateDto.getTaskRequestDto()))
+                .map(taskRepository::save)
+                .map(this::convertToDto)
+                .orElseThrow(() ->  new RuntimeException("Task by id:{%s} not found".formatted(taskUpdateDto.getId())));
+    }
+
+    private Task merge(Task task, TaskRequestDto taskRequestDto) {
+        return task.toBuilder()
+                .assigneeId(taskRequestDto.getAssigneeId())
+                .description(taskRequestDto.getDescription())
+                .title(taskRequestDto.getTitle())
+                .build();
+    }
 
     private TaskDto convertToDto(Task task) {
         log.info("Converting task {}", task);
