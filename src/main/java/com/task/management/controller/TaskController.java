@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,6 +44,7 @@ public class TaskController {
     public Mono<ResponseEntity<TaskDto>> findById(@PathVariable String id) {
         log.info("Find task by id {}", id);
         return Mono.fromCallable(() -> taskService.findById(id))
+                .subscribeOn(Schedulers.boundedElastic())
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.notFound().build()));
     }
@@ -57,7 +59,7 @@ public class TaskController {
 
     @PutMapping("/{id}")
     public Mono<ResponseEntity<TaskDto>> update(@PathVariable String id, @RequestBody Mono<TaskRequestDto> taskRequestDtoMono) {
-        log.info("Update task id{} with data {}", id,  taskRequestDtoMono);
+        log.info("Update task by id{} with data {}", id,  taskRequestDtoMono);
         return taskRequestDtoMono.flatMap(taskRequestDto ->
                         Mono.fromCallable(() -> taskService.update(TaskUpdateDto.builder()
                                         .id(id)
@@ -65,6 +67,14 @@ public class TaskController {
                                         .build()))
                                 .subscribeOn(Schedulers.boundedElastic()))
                 .map(ResponseEntity::ok);
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<String>> delete(@PathVariable String id) {
+        log.info("Delete task by id {}", id);
+        return Mono.fromCallable(() -> taskService.delete(id))
+                .map(deletedId -> ResponseEntity.status(HttpStatus.NO_CONTENT).body(deletedId))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
 

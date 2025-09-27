@@ -59,6 +59,12 @@ public class TaskService {
                 .orElseThrow(() ->  new RuntimeException("Task by id:{%s} not found".formatted(taskUpdateDto.getId())));
     }
 
+    public String delete(String taskId) {
+        log.info("Delete task by id {}", taskId);
+        taskRepository.deleteById(taskId);
+        return taskId;
+    }
+
     private Task merge(Task task, TaskRequestDto taskRequestDto) {
         return task.toBuilder()
                 .assigneeId(taskRequestDto.getAssigneeId())
