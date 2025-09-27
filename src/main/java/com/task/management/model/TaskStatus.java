@@ -1,10 +1,10 @@
 package com.task.management.model;
 
 public enum TaskStatus {
-    Todo,
-    InProgress,
-    UnderReview,
-    Approved,
-    Done,
-    Cancelled
+    TODO,
+    IN_PROGRESS,
+    UNDER_REVIEW,
+    APPROVED,
+    DONE,
+    CANCELLED
 }

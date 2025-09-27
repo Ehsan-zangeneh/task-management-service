@@ -51,7 +51,7 @@ public class TaskService {
                 .ownerId(taskCreationRequestDto.getOwnerId())
                 .title(taskCreationRequestDto.getTitle())
                 .creationDate(ZonedDateTime.now())
-                .status(TaskStatus.Todo)
+                .status(TaskStatus.TODO)
                 .build());
         return task.map(this::convertToDto);
     }
@@ -83,8 +83,8 @@ public class TaskService {
 
 
     private boolean checkValidityForRemove(Task task) {
-        return task.getStatus().equals(TaskStatus.Todo)
-                || task.getStatus().equals(TaskStatus.Cancelled);
+        return task.getStatus().equals(TaskStatus.TODO)
+                || task.getStatus().equals(TaskStatus.CANCELLED);
     }
 
     private Task merge(Task task, TaskUpdateRequestDto taskUpdateRequestDto) {
