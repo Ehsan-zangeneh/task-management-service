@@ -7,5 +7,5 @@ import lombok.Value;
 @Value
 public class TaskUpdateDto {
     String id;
-    TaskRequestDto taskRequestDto;
+    TaskUpdateRequestDto taskUpdateRequestDto;
 }

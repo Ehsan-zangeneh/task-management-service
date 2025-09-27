@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -49,6 +50,11 @@ public class Task {
     @PreUpdate
     protected void preUpdate() {
         this.modificationDate = ZonedDateTime.now();
+    }
+
+    @PreRemove
+    protected void preRemove() {
+        this.deleteDate = ZonedDateTime.now();
     }
 
 }

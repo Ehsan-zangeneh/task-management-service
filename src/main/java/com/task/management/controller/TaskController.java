@@ -1,10 +1,18 @@
 package com.task.management.controller;
 
 
-import com.task.management.dto.TaskRequestDto;
+import com.task.management.dto.TaskCreateRequestDto;
 import com.task.management.dto.TaskDto;
 import com.task.management.dto.TaskUpdateDto;
+import com.task.management.dto.TaskUpdateRequestDto;
+import com.task.management.exception.ErrorMessage;
 import com.task.management.service.TaskService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,6 +39,15 @@ public class TaskController {
 
     private final TaskService taskService;
 
+    @Operation(summary = "Retrieve a paginated list of tasks")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful retrieval of tasks",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = TaskDto.class))
+                    )
+            )
+    })
     @GetMapping
     public Flux<TaskDto> findAll(@RequestParam(defaultValue = "0") int page,
                                  @RequestParam(defaultValue = "10") int size) {
@@ -40,17 +57,29 @@ public class TaskController {
                 .flatMapMany(Flux::fromIterable);
     }
 
+    @Operation(summary = "Retrieve a task by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task retrieved successfully"),
+            @ApiResponse(responseCode = "404",
+                    description = "Task not found",
+                    content = @Content(schema = @Schema(implementation = ErrorMessage.class))
+            ),
+    })
     @GetMapping("/{id}")
     public Mono<ResponseEntity<TaskDto>> findById(@PathVariable String id) {
         log.info("Find task by id {}", id);
         return Mono.fromCallable(() -> taskService.findById(id))
                 .subscribeOn(Schedulers.boundedElastic())
-                .map(ResponseEntity::ok)
-                .onErrorResume(e -> Mono.just(ResponseEntity.notFound().build()));
+                .map(ResponseEntity::ok);
     }
 
+    @Operation(summary = "Create a new task")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Task created successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+    })
     @PostMapping
-    public Mono<ResponseEntity<TaskDto>> save(@RequestBody Mono<TaskRequestDto> taskCreationMono) {
+    public Mono<ResponseEntity<TaskDto>> save(@RequestBody Mono<TaskCreateRequestDto> taskCreationMono) {
         return taskCreationMono
                 .flatMap(this::persist)
                 .map(taskDto -> ResponseEntity.status(HttpStatus.CREATED).body(taskDto));
@@ -58,17 +87,21 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<TaskDto>> update(@PathVariable String id, @RequestBody Mono<TaskRequestDto> taskRequestDtoMono) {
-        log.info("Update task by id{} with data {}", id,  taskRequestDtoMono);
-        return taskRequestDtoMono.flatMap(taskRequestDto ->
+    public Mono<ResponseEntity<TaskDto>> update(@PathVariable String id, @RequestBody Mono<TaskUpdateRequestDto> taskUpdateRequestDtoMono) {
+        log.info("Update task by id{} with data {}", id,  taskUpdateRequestDtoMono);
+        return taskUpdateRequestDtoMono.flatMap(taskRequestDto ->
                         Mono.fromCallable(() -> taskService.update(TaskUpdateDto.builder()
                                         .id(id)
-                                        .taskRequestDto(taskRequestDto)
+                                        .taskUpdateRequestDto(taskRequestDto)
                                         .build()))
                                 .subscribeOn(Schedulers.boundedElastic()))
                 .map(ResponseEntity::ok);
     }
 
+    @Operation(summary = "Delete a task by its id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
+    })
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<String>> delete(@PathVariable String id) {
         log.info("Delete task by id {}", id);
@@ -79,7 +112,7 @@ public class TaskController {
 
 
 
-    private Mono<TaskDto> persist(TaskRequestDto taskCreationRequestDto) {
+    private Mono<TaskDto> persist(TaskCreateRequestDto taskCreationRequestDto) {
         log.info("Persist task {}", taskCreationRequestDto);
         return Mono.fromCallable(() -> taskService.save(taskCreationRequestDto))
                 .subscribeOn(Schedulers.boundedElastic());
