@@ -63,10 +63,10 @@ public class TaskController {
             ),
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Mono<TaskDto>> findById(@PathVariable String id) {
+    public Mono<ResponseEntity<TaskDto>> findById(@PathVariable String id) {
         log.info("Find task by id {}", id);
-        var taskDto = taskService.findById(id);
-        return ResponseEntity.ok(taskDto);
+        return taskService.findById(id)
+                .map(ResponseEntity::ok);
     }
 
     @Operation(summary = "Create a new task")
@@ -75,9 +75,9 @@ public class TaskController {
             @ApiResponse(responseCode = "400", description = "Bad request"),
     })
     @PostMapping
-    public ResponseEntity<Mono<TaskDto>> create(@RequestBody TaskCreateRequestDto taskCreationMono) {
-        var taskDto = taskService.save(taskCreationMono);
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskDto);
+    public Mono<ResponseEntity<TaskDto>> create(@RequestBody TaskCreateRequestDto taskCreationMono) {
+        return taskService.save(taskCreationMono)
+                .map(taskDto -> ResponseEntity.status(HttpStatus.CREATED).body(taskDto));
     }
 
     @Operation(summary = "Update a task")
@@ -90,13 +90,13 @@ public class TaskController {
             )
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Mono<TaskDto>> update(@PathVariable String id, @RequestBody TaskUpdateRequestDto taskUpdateRequestDto) {
+    public Mono<ResponseEntity<TaskDto>> update(@PathVariable String id, @RequestBody TaskUpdateRequestDto taskUpdateRequestDto) {
         log.info("Update task by id{} with data {}", id,  taskUpdateRequestDto);
-        var updatedTaskDto = taskService.update(TaskUpdateDto.builder()
-                .id(id)
-                .taskUpdateRequestDto(taskUpdateRequestDto)
-                .build());
-        return ResponseEntity.ok(updatedTaskDto);
+        return taskService.update(TaskUpdateDto.builder()
+                        .id(id)
+                        .taskUpdateRequestDto(taskUpdateRequestDto)
+                        .build())
+                .map(ResponseEntity::ok);
     }
 
     @Operation(summary = "Delete a task by its id")
@@ -104,10 +104,10 @@ public class TaskController {
             @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Mono<String>> delete(@PathVariable String id) {
+    public Mono<ResponseEntity<String>> delete(@PathVariable String id) {
         log.info("Delete task by id {}", id);
-        var deletedTaskId = taskService.delete(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(deletedTaskId);
+        return taskService.delete(id)
+                .map(deletedTaskId -> ResponseEntity.status(HttpStatus.NO_CONTENT).body(deletedTaskId));
     }
 
 }

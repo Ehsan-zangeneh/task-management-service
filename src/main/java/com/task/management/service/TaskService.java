@@ -38,7 +38,7 @@ public class TaskService {
         log.info("Find task by id {}", taskId);
         return taskRepository.findById(taskId)
                 .switchIfEmpty(Mono.error(
-                        new TaskNotFoundException("Task not found with id: ".formatted(taskId))
+                        new TaskNotFoundException("Task not found with id:{%s}".formatted(taskId))
                 ))
                 .map(this::convertToDto);
     }
@@ -60,7 +60,7 @@ public class TaskService {
         log.info("Update task {}", taskUpdateDto);
         return taskRepository.findById(taskUpdateDto.getId())
                 .switchIfEmpty(Mono.error(
-                        new TaskNotFoundException("Task not found with id: ".formatted(taskUpdateDto.getId()))
+                        new TaskNotFoundException("Task not found with id:{%s}".formatted(taskUpdateDto.getId()))
                 ))
                 .map(t -> merge(t, taskUpdateDto.getTaskUpdateRequestDto()))
                 .flatMap(taskRepository::save)
@@ -70,11 +70,11 @@ public class TaskService {
     public Mono<String> delete(String taskId) {
         log.info("Delete task by id {}", taskId);
         return taskRepository.findById(taskId)
-                .switchIfEmpty(Mono.error(new TaskNotFoundException("Task not found with id: " + taskId)))
+                .switchIfEmpty(Mono.error(new TaskNotFoundException("Task not found with id:{%s}".formatted(taskId))))
                 .flatMap(task -> {
                     if (!checkValidityForRemove(task)) {
                         return Mono.error(new IllegalTaskManagementOperationException(
-                                "The task {%s} not valid for deletion".formatted(task.getId())
+                                "The task with id:{%s} not valid for deletion".formatted(task.getId())
                         ));
                     }
                     return taskRepository.deleteById(taskId).thenReturn(taskId);
