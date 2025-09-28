@@ -7,8 +7,10 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 
+import java.util.UUID;
+
 @Repository
-public interface TaskRepository extends ReactiveCrudRepository<Task, String> {
+public interface TaskRepository extends ReactiveCrudRepository<Task, UUID> {
 
     @Query("SELECT * FROM task LIMIT :limit OFFSET :offset")
     Flux<Task> findAllPaged(@Param("limit") int limit, @Param("offset") int offset);

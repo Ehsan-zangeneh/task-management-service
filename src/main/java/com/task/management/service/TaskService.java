@@ -18,6 +18,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 
 @Service
@@ -36,7 +37,7 @@ public class TaskService {
 
     public Mono<TaskDto> findById(String taskId) {
         log.info("Find task by id {}", taskId);
-        return taskRepository.findById(taskId)
+        return taskRepository.findById(UUID.fromString(taskId))
                 .switchIfEmpty(Mono.error(
                         new TaskNotFoundException("Task not found with id:{%s}".formatted(taskId))
                 ))
@@ -58,7 +59,7 @@ public class TaskService {
 
     public Mono<TaskDto> update(TaskUpdateDto taskUpdateDto) {
         log.info("Update task {}", taskUpdateDto);
-        return taskRepository.findById(taskUpdateDto.getId())
+        return taskRepository.findById(UUID.fromString(taskUpdateDto.getId()))
                 .switchIfEmpty(Mono.error(
                         new TaskNotFoundException("Task not found with id:{%s}".formatted(taskUpdateDto.getId()))
                 ))
@@ -69,7 +70,7 @@ public class TaskService {
 
     public Mono<String> delete(String taskId) {
         log.info("Delete task by id {}", taskId);
-        return taskRepository.findById(taskId)
+        return taskRepository.findById(UUID.fromString(taskId))
                 .switchIfEmpty(Mono.error(new TaskNotFoundException("Task not found with id:{%s}".formatted(taskId))))
                 .flatMap(task -> {
                     if (!checkValidityForRemove(task)) {
@@ -77,7 +78,7 @@ public class TaskService {
                                 "The task with id:{%s} not valid for deletion".formatted(task.getId())
                         ));
                     }
-                    return taskRepository.deleteById(taskId).thenReturn(taskId);
+                    return taskRepository.deleteById(UUID.fromString(taskId)).thenReturn(taskId);
                 });
     }
 

@@ -6,3 +6,10 @@ spring:
     url: r2dbc:postgresql://localhost:5432/task_db
     username: ehsan
     password: ehsan
+
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/task_db
+    username: ehsan
+    password: ehsan
+#    locations: classpath:db/migration

@@ -19,12 +19,5 @@ services:
     environment:
       ADMINER_DEFAULT_SERVER: postgres
 
-#  mongodb:
-#    image: docker.arvancloud.ir/mongo
-#    container_name: mongodb
-#    ports:
-#      - "27017:27017"
-#    networks:
-#      - my-network
 
 

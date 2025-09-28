@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -48,11 +50,13 @@ public class TaskController {
             )
     })
     @GetMapping
-    public Flux<TaskDto> findAll(@RequestParam(defaultValue = "0") int page,
-                                 @RequestParam(defaultValue = "10") int size) {
-        log.info("Find all tasks with page {} and size {}", page, size);
-        return taskService.findAll(page, size);
+    public Mono<ResponseEntity<List<TaskDto>>> findAll(@RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "10") int size) {
+        return taskService.findAll(page, size)
+                .collectList()
+                .map(ResponseEntity::ok);
     }
+
 
     @Operation(summary = "Retrieve a task by id")
     @ApiResponses(value = {
@@ -104,10 +108,10 @@ public class TaskController {
             @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
     })
     @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<String>> delete(@PathVariable String id) {
+    public Mono<ResponseEntity<Void>> delete(@PathVariable String id) {
         log.info("Delete task by id {}", id);
         return taskService.delete(id)
-                .map(deletedTaskId -> ResponseEntity.status(HttpStatus.NO_CONTENT).body(deletedTaskId));
+                .map(deletedTaskId -> ResponseEntity.noContent().build());
     }
 
 }
