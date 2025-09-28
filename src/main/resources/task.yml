@@ -11,7 +11,7 @@ paths:  # All available endpoints
       tags:
         - TaskManagement
       summary: Retrieve a paginated list of tasks
-      operationId: getTasks  # Unique ID for this operation (used in code generation)
+      operationId: getAllTasks
       parameters:
         - name: page
           in: query  # query parameter
@@ -83,14 +83,14 @@ paths:  # All available endpoints
                 $ref: '#/components/schemas/ErrorMessage'
     put:
       summary: Update a task
-      operationId: updateTask
+      operationId: updateTaskById
       tags:
         - TaskManagement
       parameters:
         - name: id
           in: path
           required: true
-          description: Unique identifier of the task to update
+          description: id of the task to update
           schema:
             type: string
             format: uuid
@@ -108,6 +108,35 @@ paths:  # All available endpoints
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskDto'
+    delete:
+      summary: Delete a task by its id
+      operationId: deleteTaskById
+      tags:
+        - TaskManagement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: id of the task to delete
+          schema:
+            type: string
+            format: uuid
+            example: "f47ac10b-58cc-4372-a567-0e02b2c3d414"
+      responses:
+        '204':
+          description: Task deleted successfully
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
 
 components:

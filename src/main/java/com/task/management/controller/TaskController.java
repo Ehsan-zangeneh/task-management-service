@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
@@ -26,7 +25,7 @@ public class TaskController implements TaskManagementApi {
     private final TaskService taskService;
 
     @Override
-    public Mono<ResponseEntity<Flux<TaskDto>>> getTasks(Integer page, Integer size, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Flux<TaskDto>>> getAllTasks(Integer page, Integer size, ServerWebExchange exchange) {
         var taskStream = taskService.findAll(page, size);
         return Mono.just(ResponseEntity.ok(taskStream));
     }
@@ -47,7 +46,7 @@ public class TaskController implements TaskManagementApi {
     }
 
     @Override
-    public Mono<ResponseEntity<TaskDto>> updateTask(UUID id, Mono<TaskUpdateRequestDto> taskUpdateRequestDto, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<TaskDto>> updateTaskById(UUID id, Mono<TaskUpdateRequestDto> taskUpdateRequestDto, ServerWebExchange exchange) {
         return taskUpdateRequestDto
                 .map(updateRequest -> taskService.update(TaskUpdateDto.builder()
                         .id(id)
@@ -56,17 +55,11 @@ public class TaskController implements TaskManagementApi {
                 .flatMap(taskDtoMono -> taskDtoMono.map(ResponseEntity::ok));
     }
 
-
-//
-//    @Operation(summary = "Delete a task by its id")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
-//    })
-//    @DeleteMapping("/{id}")
-//    public Mono<ResponseEntity<Void>> delete(@PathVariable String id) {
-//        log.info("Delete task by id {}", id);
-//        return taskService.delete(id)
-//                .map(deletedTaskId -> ResponseEntity.noContent().build());
-//    }
+    @Override
+    public Mono<ResponseEntity<Void>> deleteTaskById(UUID id, ServerWebExchange exchange) {
+        log.info("Delete task by id {}", id);
+        return taskService.delete(id)
+                .map(deletedTaskId -> ResponseEntity.noContent().build());
+    }
 
 }

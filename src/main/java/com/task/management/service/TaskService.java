@@ -68,9 +68,9 @@ public class TaskService {
                 .map(this::convertToDto);
     }
 
-    public Mono<String> delete(String taskId) {
+    public Mono<String> delete(UUID taskId) {
         log.info("Delete task by id {}", taskId);
-        return taskRepository.findById(UUID.fromString(taskId))
+        return taskRepository.findById(taskId)
                 .switchIfEmpty(Mono.error(new TaskNotFoundException("Task not found with id:{%s}".formatted(taskId))))
                 .flatMap(task -> {
                     if (!checkValidityForRemove(task)) {
@@ -78,7 +78,7 @@ public class TaskService {
                                 "The task with id:{%s} not valid for deletion".formatted(task.getId())
                         ));
                     }
-                    return taskRepository.deleteById(UUID.fromString(taskId)).thenReturn(taskId);
+                    return taskRepository.deleteById(taskId).thenReturn(taskId.toString());
                 });
     }
 
