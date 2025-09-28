@@ -104,7 +104,7 @@ public class TaskService {
                 .id(task.getId())
                 .title(task.getTitle())
                 .description(task.getDescription())
-                .status(task.getStatus())
+                .status(TaskDto.StatusEnum.fromValue(task.getStatus().name()))
                 .creationDate(task.getCreationDate())
                 .modificationDate(task.getModificationDate())
                 .assigneeId(task.getAssigneeId())

@@ -1,0 +1,84 @@
+openapi: 3.0.3
+
+info:
+  title: Task Management API
+  version: 1.0.0
+  description: API for managing tasks
+
+paths:  # All available endpoints
+  /tasks:
+    get:
+      summary: Retrieve a paginated list of tasks
+      operationId: getTasks  # Unique ID for this operation (used in code generation)
+      parameters:
+        - name: page
+          in: query  # query parameter
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successful retrieval of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskDto'
+
+components:
+  schemas:
+    TaskDto:
+      type: object
+      description: Represents a task with metadata and assignment details
+      properties:
+        id:
+          type: string
+          format: uuid  # UUID format for unique task identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        title:
+          type: string
+          description: Title of the task
+          example: "Write documentation"
+        description:
+          type: string
+          description: Detailed description of the task
+          example: "Complete the API documentation for the task module"
+        creationDate:
+          type: string
+          format: date-time  # ZonedDateTime maps to ISO 8601 date-time format
+          description: Timestamp when the task was created
+          example: "2025-09-28T08:30:00+01:00"
+        modificationDate:
+          type: string
+          format: date-time
+          description: Timestamp of the last modification
+          example: "2025-09-29T14:45:00+01:00"
+        status:
+          type: string
+          description: Current status of the task
+          example: "IN_PROGRESS"
+          enum:
+            - TODO
+            - IN_PROGRESS
+            - UNDER_REVIEW
+            - APPROVED
+            - DONE
+            - CANCELLED
+        ownerId:
+          type: string
+          description: ID of the user who created the task
+          example: "user-123"
+        assigneeId:
+          type: string
+          description: ID of the user assigned to the task
+          example: "user-456"
