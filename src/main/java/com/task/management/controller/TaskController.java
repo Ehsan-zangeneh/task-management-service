@@ -89,7 +89,7 @@ public class TaskController {
             @ApiResponse(responseCode = "200", description = "Successful update of a task",
                     content = @Content(
                             mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = TaskDto.class))
+                            schema = @Schema(implementation = TaskDto.class)
                     )
             )
     })
