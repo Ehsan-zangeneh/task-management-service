@@ -10,7 +10,7 @@ import lombok.Value;
 
 @Builder
 @Value
-public class TaskUpdateRequestDto {
+public class TaskUpdateRequestDtoPrime {
 
     @NotBlank
     String title;

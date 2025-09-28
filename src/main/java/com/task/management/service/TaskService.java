@@ -59,7 +59,7 @@ public class TaskService {
 
     public Mono<TaskDto> update(TaskUpdateDto taskUpdateDto) {
         log.info("Update task {}", taskUpdateDto);
-        return taskRepository.findById(UUID.fromString(taskUpdateDto.getId()))
+        return taskRepository.findById(taskUpdateDto.getId())
                 .switchIfEmpty(Mono.error(
                         new TaskNotFoundException("Task not found with id:{%s}".formatted(taskUpdateDto.getId()))
                 ))
@@ -93,7 +93,7 @@ public class TaskService {
                 .assigneeId(taskUpdateRequestDto.getAssigneeId())
                 .description(taskUpdateRequestDto.getDescription())
                 .title(taskUpdateRequestDto.getTitle())
-                .status(taskUpdateRequestDto.getStatus())
+                .status(TaskStatus.valueOf(taskUpdateRequestDto.getStatus().getValue()))
                 .modificationDate(ZonedDateTime.now())
                 .build();
     }
@@ -104,7 +104,7 @@ public class TaskService {
                 .id(task.getId())
                 .title(task.getTitle())
                 .description(task.getDescription())
-                .status(TaskDto.StatusEnum.fromValue(task.getStatus().name()))
+                .status(com.task.management.dto.TaskStatus.valueOf(task.getStatus().name()))
                 .creationDate(task.getCreationDate())
                 .modificationDate(task.getModificationDate())
                 .assigneeId(task.getAssigneeId())

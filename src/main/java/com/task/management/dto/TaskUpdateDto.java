@@ -4,10 +4,12 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Value;
 
+import java.util.UUID;
+
 @Builder
 @Value
 public class TaskUpdateDto {
     @NotBlank
-    String id;
+    UUID id;
     TaskUpdateRequestDto taskUpdateRequestDto;
 }

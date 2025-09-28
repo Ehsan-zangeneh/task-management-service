@@ -8,6 +8,8 @@ info:
 paths:  # All available endpoints
   /tasks:
     get:
+      tags:
+        - TaskManagement
       summary: Retrieve a paginated list of tasks
       operationId: getTasks  # Unique ID for this operation (used in code generation)
       parameters:
@@ -34,9 +36,98 @@ paths:  # All available endpoints
                 type: array
                 items:
                   $ref: '#/components/schemas/TaskDto'
+    post:
+      summary: Create a new task
+      operationId: createTask
+      tags:
+        - TaskManagement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequestDto'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+        '400':
+          description: Bad request
+  /tasks/{id}:
+    get:
+      tags:
+        - TaskManagement
+      operationId: getTaskById
+      summary: Retrieve a task by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+    put:
+      summary: Update a task
+      operationId: updateTask
+      tags:
+        - TaskManagement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the task to update
+          schema:
+            type: string
+            format: uuid
+            example: "f47ac10b-58cc-4372-a567-0e02b2c3d414"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdateRequestDto'
+      responses:
+        '200':
+          description: Successful update of a task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+
 
 components:
   schemas:
+    UUID:
+      type: string
+      format: uuid
+      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+
+    TaskStatus:
+      type: string
+      enum:
+        - TODO
+        - IN_PROGRESS
+        - UNDER_REVIEW
+        - APPROVED
+        - DONE
+        - CANCELLED
+      example: "TODO"
+
     TaskDto:
       type: object
       description: Represents a task with metadata and assignment details
@@ -64,21 +155,66 @@ components:
           description: Timestamp of the last modification
           example: "2025-09-29T14:45:00+01:00"
         status:
-          type: string
-          description: Current status of the task
-          example: "IN_PROGRESS"
-          enum:
-            - TODO
-            - IN_PROGRESS
-            - UNDER_REVIEW
-            - APPROVED
-            - DONE
-            - CANCELLED
+          $ref: '#/components/schemas/TaskStatus'
         ownerId:
-          type: string
-          description: ID of the user who created the task
-          example: "user-123"
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+            - example: "f47ac10b-58cc-4372-a567-0e02b2c3d414"
         assigneeId:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+            - example: "f47ac10b-58cc-4372-a567-0e02b2c3d413"
+
+    TaskCreateRequestDto:
+      type: object
+      required:
+        - title
+        - ownerId
+      properties:
+        title:
           type: string
-          description: ID of the user assigned to the task
-          example: "user-456"
+          description: Title of the task
+          example: "Write documentation"
+          minLength: 5
+        description:
+          type: string
+          description: Detailed description of the task
+          example: "Complete the API documentation for the task module"
+        ownerId:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+            - example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        assigneeId:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+            - example: "f47ac10b-58cc-4372-a567-0e02b2c3d412"
+
+    TaskUpdateRequestDto:
+      type: object
+      required:
+        - title
+        - ownerId
+      properties:
+        title:
+          type: string
+          minLength: 1
+          description: Title of the task
+          example: "Update documentation"
+        description:
+          type: string
+          description: Detailed description of the task
+          example: "Revise the API documentation for the task module"
+        ownerId:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+            - example: "f47ac10b-58cc-4372-a567-0e02b2c3d414"
+        assigneeId:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+            - example: "9c858901-8a57-4791-81fe-4c455b099bc9"
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+
+    ErrorMessage:
+      type: object
+      x-import: com.task.management.exception.ErrorMessage

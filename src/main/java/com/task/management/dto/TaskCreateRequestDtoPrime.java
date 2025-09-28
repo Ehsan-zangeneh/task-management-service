@@ -9,7 +9,7 @@ import lombok.Value;
 
 @Builder
 @Value
-public class TaskCreateRequestDto {
+public class TaskCreateRequestDtoPrime {
 
     @NotBlank
     String title;

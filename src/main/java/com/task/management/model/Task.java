@@ -27,7 +27,7 @@ public class Task {
     ZonedDateTime creationDate;
     ZonedDateTime modificationDate;
     TaskStatus status;
-    String ownerId;
-    String assigneeId;
+    UUID ownerId;
+    UUID assigneeId;
 
 }

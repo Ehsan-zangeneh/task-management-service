@@ -1,24 +1,24 @@
 package com.task.management.controller;
 
-
-import com.task.management.api.TasksApi;
+import com.task.management.api.TaskManagementApi;
+import com.task.management.dto.TaskCreateRequestDto;
 import com.task.management.dto.TaskDto;
+import com.task.management.dto.TaskUpdateDto;
+import com.task.management.dto.TaskUpdateRequestDto;
 import com.task.management.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.UUID;
 
-@RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/tasks")
-public class TaskController implements TasksApi {
+public class TaskController implements TaskManagementApi {
 
     private final TaskService taskService;
 
@@ -28,68 +28,32 @@ public class TaskController implements TasksApi {
         return Mono.just(ResponseEntity.ok(taskStream));
     }
 
-    //    @Operation(summary = "Retrieve a paginated list of tasks")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Successful retrieval of tasks",
-//                    content = @Content(
-//                            mediaType = "application/json",
-//                            array = @ArraySchema(schema = @Schema(implementation = TaskDto.class))
-//                    )
-//            )
-//    })
-//    @GetMapping
-//    public Mono<ResponseEntity<List<TaskDto>>> findAll(@RequestParam(defaultValue = "0") int page,
-//                                                       @RequestParam(defaultValue = "10") int size) {
-//        return taskService.findAll(page, size)
-//                .collectList()
-//                .map(ResponseEntity::ok);
-//    }
-//
-//
-//    @Operation(summary = "Retrieve a task by id")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Task retrieved successfully"),
-//            @ApiResponse(responseCode = "404",
-//                    description = "Task not found",
-//                    content = @Content(schema = @Schema(implementation = ErrorMessage.class))
-//            ),
-//    })
-//    @GetMapping("/{id}")
-//    public Mono<ResponseEntity<TaskDto>> findById(@PathVariable String id) {
-//        log.info("Find task by id {}", id);
-//        return taskService.findById(id)
-//                .map(ResponseEntity::ok);
-//    }
-//
-//    @Operation(summary = "Create a new task")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "201", description = "Task created successfully"),
-//            @ApiResponse(responseCode = "400", description = "Bad request"),
-//    })
-//    @PostMapping
-//    public Mono<ResponseEntity<TaskDto>> create(@RequestBody TaskCreateRequestDto taskCreationMono) {
-//        return taskService.save(taskCreationMono)
-//                .map(taskDto -> ResponseEntity.status(HttpStatus.CREATED).body(taskDto));
-//    }
-//
-//    @Operation(summary = "Update a task")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Successful update of a task",
-//                    content = @Content(
-//                            mediaType = "application/json",
-//                            schema = @Schema(implementation = TaskDto.class)
-//                    )
-//            )
-//    })
-//    @PutMapping("/{id}")
-//    public Mono<ResponseEntity<TaskDto>> update(@PathVariable String id, @RequestBody TaskUpdateRequestDto taskUpdateRequestDto) {
-//        log.info("Update task by id{} with data {}", id,  taskUpdateRequestDto);
-//        return taskService.update(TaskUpdateDto.builder()
-//                        .id(id)
-//                        .taskUpdateRequestDto(taskUpdateRequestDto)
-//                        .build())
-//                .map(ResponseEntity::ok);
-//    }
+    @Override
+    public Mono<ResponseEntity<TaskDto>> getTaskById(String id, ServerWebExchange exchange) {
+        return taskService.findById(id)
+                .map(ResponseEntity::ok);
+    }
+
+    @Override
+    public Mono<ResponseEntity<TaskDto>> createTask(Mono<TaskCreateRequestDto> taskCreateRequestDto, ServerWebExchange exchange) {
+        return taskCreateRequestDto
+                .map(taskService::save)
+                .flatMap(taskDtoMono -> taskDtoMono.map(
+                        taskDto -> ResponseEntity.status(HttpStatus.CREATED).body(taskDto)
+                ));
+    }
+
+    @Override
+    public Mono<ResponseEntity<TaskDto>> updateTask(UUID id, Mono<TaskUpdateRequestDto> taskUpdateRequestDto, ServerWebExchange exchange) {
+        return taskUpdateRequestDto
+                .map(updateRequest -> taskService.update(TaskUpdateDto.builder()
+                        .id(id)
+                        .taskUpdateRequestDto(updateRequest)
+                        .build()))
+                .flatMap(taskDtoMono -> taskDtoMono.map(ResponseEntity::ok));
+    }
+
+
 //
 //    @Operation(summary = "Delete a task by its id")
 //    @ApiResponses(value = {
