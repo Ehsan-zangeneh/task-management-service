@@ -51,7 +51,7 @@ openApiGenerate {
             useBeanValidation: "true",
             reactive: "true",
             returnResponse: "true",
-            useSpringController: 'false',
+            useSpringController: "false",
             useSpringBoot3: "true",
             dateLibrary: "java8",
             interfaceOnly: "true",
