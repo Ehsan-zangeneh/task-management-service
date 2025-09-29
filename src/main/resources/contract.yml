@@ -5,7 +5,7 @@ info:
   version: 1.0.0
   description: API for managing tasks
 
-paths:  # All available endpoints
+paths:
   /tasks:
     get:
       tags:
@@ -14,7 +14,7 @@ paths:  # All available endpoints
       operationId: getAllTasks
       parameters:
         - name: page
-          in: query  # query parameter
+          in: query
           description: Page number
           required: false
           schema:
@@ -171,7 +171,7 @@ components:
       properties:
         id:
           type: string
-          format: uuid  # UUID format for unique task identifier
+          format: uuid
           example: "123e4567-e89b-12d3-a456-426614174000"
         title:
           type: string
@@ -183,7 +183,7 @@ components:
           example: "Complete the API documentation for the task module"
         creationDate:
           type: string
-          format: date-time  # ZonedDateTime maps to ISO 8601 date-time format
+          format: date-time
           description: Timestamp when the task was created
           example: "2025-09-28T08:30:00+01:00"
         modificationDate:
@@ -255,15 +255,3 @@ components:
     ErrorMessage:
       type: object
       x-import: com.task.management.exception.ErrorMessage
-      properties:
-        status:
-          type: integer
-          format: int32
-        description:
-          type: string
-        message:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-

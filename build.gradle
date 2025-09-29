@@ -49,11 +49,7 @@ openApiGenerate {
             useTags: "true"
     ]
     typeMappings = [
-            OffsetDateTime: "java.time.ZonedDateTime",
-            ErrorMessage: "com.task.management.exception.ErrorMessage"
-    ]
-    importMappings = [
-            ErrorMessage: "com.task.management.exception.ErrorMessage"
+            OffsetDateTime: "java.time.ZonedDateTime"
     ]
     schemaMappings = [
             ErrorMessage: "com.task.management.exception.ErrorMessage"
