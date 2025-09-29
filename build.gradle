@@ -24,7 +24,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.32'
     annotationProcessor 'org.projectlombok:lombok:1.18.32'
     implementation 'org.postgresql:postgresql:42.7.3'
-    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.7.0'
 }
 
 test {
@@ -49,8 +49,16 @@ openApiGenerate {
             useTags: "true"
     ]
     typeMappings = [
-            OffsetDateTime: "java.time.ZonedDateTime"
+            OffsetDateTime: "java.time.ZonedDateTime",
+            ErrorMessage: "com.task.management.exception.ErrorMessage"
     ]
+    importMappings = [
+            ErrorMessage: "com.task.management.exception.ErrorMessage"
+    ]
+    schemaMappings = [
+            ErrorMessage: "com.task.management.exception.ErrorMessage"
+    ]
+
 }
 
 sourceSets {

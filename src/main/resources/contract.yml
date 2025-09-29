@@ -108,6 +108,21 @@ paths:  # All available endpoints
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskDto'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                taskNotFound:
+                  summary: Task not found example
+                  value:
+                    status: 404
+                    description: Not Found
+                    message: Task not found with id:{f295da63-b69d-4fed-8b1f-d49bbc104f2b}
+                    timestamp: 2025-09-29T17:11:30.2022857+02:00
+
     delete:
       summary: Delete a task by its id
       operationId: deleteTaskById
@@ -131,13 +146,6 @@ paths:  # All available endpoints
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorMessage'
-
 
 components:
   schemas:
@@ -247,3 +255,15 @@ components:
     ErrorMessage:
       type: object
       x-import: com.task.management.exception.ErrorMessage
+      properties:
+        status:
+          type: integer
+          format: int32
+        description:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
