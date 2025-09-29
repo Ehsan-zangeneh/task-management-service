@@ -38,7 +38,7 @@ public class TaskManagementControllerExceptionHandler {
 
     @ExceptionHandler({Exception.class})
     public ResponseEntity<ErrorMessage> handleException(Exception e) {
-        return buildErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(),e);
+        return buildErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "An Internal Error occurred",e);
     }
 
 

@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.3.2'
+    id 'org.springframework.boot' version '3.5.6'
     id 'org.openapi.generator' version '7.0.1'
 }
 
@@ -13,27 +13,18 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-webflux:3.3.2'
-    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc:3.3.2'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux:3.5.6'
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc:3.5.6'
     implementation 'io.projectreactor.netty:reactor-netty-http:1.1.7'
     implementation 'io.r2dbc:r2dbc-postgresql:0.8.13.RELEASE'
-
     implementation 'org.flywaydb:flyway-core:11.13.2'
-    // https://mvnrepository.com/artifact/org.flywaydb/flyway-database-postgresql
     runtimeOnly 'org.flywaydb:flyway-database-postgresql:11.13.2'
-
-// https://mvnrepository.com/artifact/org.openapitools/jackson-databind-nullable
     implementation 'org.openapitools:jackson-databind-nullable:0.2.7'
-
-    implementation 'org.springframework.boot:spring-boot-starter-validation:3.3.2'
+    implementation 'org.springframework.boot:spring-boot-starter-validation:3.5.6'
     compileOnly 'org.projectlombok:lombok:1.18.32'
     annotationProcessor 'org.projectlombok:lombok:1.18.32'
     implementation 'org.postgresql:postgresql:42.7.3'
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0'
-//    http://localhost:8080/webjars/swagger-ui/index.html
-//    or
-//    http://localhost:8080/swagger-ui.html
-
 }
 
 test {
@@ -42,7 +33,7 @@ test {
 
 openApiGenerate {
     generatorName = "spring"
-    inputSpec = "$rootDir/src/main/resources/task.yml"
+    inputSpec = "$rootDir/src/main/resources/contract.yml"
     outputDir = "$buildDir/generated"
     apiPackage = "com.task.management.api"
     modelPackage = "com.task.management.dto"

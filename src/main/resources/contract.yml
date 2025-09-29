@@ -204,7 +204,7 @@ components:
           type: string
           description: Title of the task
           example: "Write documentation"
-          minLength: 5
+          minLength: 1
         description:
           type: string
           description: Detailed description of the task
