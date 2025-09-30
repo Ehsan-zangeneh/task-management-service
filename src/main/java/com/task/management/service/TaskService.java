@@ -89,13 +89,16 @@ public class TaskService {
     }
 
     private Task merge(Task task, TaskUpdateRequestDto taskUpdateRequestDto) {
-        return task.toBuilder()
+        var taskBuilder = task.toBuilder()
                 .assigneeId(taskUpdateRequestDto.getAssigneeId())
                 .description(taskUpdateRequestDto.getDescription())
                 .title(taskUpdateRequestDto.getTitle())
-                .status(TaskStatus.valueOf(taskUpdateRequestDto.getStatus().getValue()))
-                .modificationDate(ZonedDateTime.now())
-                .build();
+                .modificationDate(ZonedDateTime.now());
+        if (taskUpdateRequestDto.getStatus() != null) {
+                taskBuilder.status(TaskStatus.valueOf(taskUpdateRequestDto.getStatus().getValue()));
+
+        }
+        return taskBuilder.build();
     }
 
     private TaskDto convertToDto(Task task) {

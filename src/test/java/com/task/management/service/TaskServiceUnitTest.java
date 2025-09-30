@@ -2,10 +2,13 @@ package com.task.management.service;
 
 import com.task.management.dto.TaskCreateRequestDto;
 import com.task.management.dto.TaskDto;
+import com.task.management.dto.TaskUpdateDto;
+import com.task.management.dto.TaskUpdateRequestDto;
 import com.task.management.exception.TaskNotFoundException;
 import com.task.management.model.Task;
 import com.task.management.model.TaskStatus;
 import com.task.management.repository.TaskRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +20,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -147,6 +151,7 @@ public class TaskServiceUnitTest {
     }
 
     @Test
+    @DisplayName("should call save method from repository")
     void save_succeed() {
 
         //given
@@ -163,10 +168,17 @@ public class TaskServiceUnitTest {
 
         //and mock the returning value from save method
         Mockito.when(taskRepository.save(Mockito.any(Task.class)))
-                .thenReturn(Mono.just(Task.builder().build()));
+                .thenReturn(Mono.just(Task.builder()
+                        .id(UUID.randomUUID())
+                        .title(title)
+                        .description(description)
+                        .assigneeId(assigneeId)
+                        .ownerId(ownerId)
+                        .status(TaskStatus.TODO)
+                        .build()));
 
         //when
-        var result = taskService.save(taskCreateRequestDto);
+        taskService.save(taskCreateRequestDto).block();
 
         //then
         Mockito.verify(taskRepository).save(Mockito.argThat(
@@ -177,6 +189,88 @@ public class TaskServiceUnitTest {
                         task.getStatus().equals(TaskStatus.TODO) &&
                         Objects.nonNull(task.getCreationDate())
         ));
+    }
+
+    @Test
+    @DisplayName("should attempt to update the task")
+    void update_succeed() {
+
+        //given
+        var assigneeId = UUID.randomUUID();
+        var ownerId = UUID.randomUUID();
+        var title = "title";
+        var description = "description";
+        var taskUpdateRequestDto= TaskUpdateRequestDto.builder()
+                .title(title)
+                .description(description)
+                .assigneeId(assigneeId)
+                .ownerId(ownerId)
+                .build();
+        var taskId = UUID.randomUUID();
+
+        //and mock the returning value from findById method from repository
+        var task = Task.builder()
+                .id(taskId)
+                .title(title)
+                .description(description)
+                .status(TaskStatus.APPROVED)
+                .ownerId(ownerId)
+                .assigneeId(assigneeId)
+                .creationDate(ZonedDateTime.now())
+                .build();
+        Mockito.when(taskRepository.findById(taskId))
+                .thenReturn(Mono.just(task));
+
+        //and mock the returning value from save method from repository
+        Mockito.when(taskRepository.save(Mockito.any(Task.class)))
+                .thenReturn(Mono.just(task));
+
+        //when
+        taskService.update(TaskUpdateDto.builder()
+                        .taskUpdateRequestDto(taskUpdateRequestDto)
+                        .id(taskId)
+                        .build())
+                .block();
+
+        //then
+        Mockito.verify(taskRepository).save(Mockito.argThat(
+                taskDto -> taskDto.getAssigneeId().equals(assigneeId) &&
+                        taskDto.getOwnerId().equals(ownerId) &&
+                        taskDto.getTitle().equals(title) &&
+                        taskDto.getDescription().equals(description) &&
+                        taskDto.getStatus().equals(TaskStatus.APPROVED) &&
+                        Objects.nonNull(taskDto.getCreationDate())
+        ));
+    }
+
+    @Test
+    @DisplayName("should throw TaskNotFoundException")
+    void update_throws_Exception() {
+
+        //given
+        var assigneeId = UUID.randomUUID();
+        var ownerId = UUID.randomUUID();
+        var title = "title";
+        var description = "description";
+        var taskUpdateRequestDto= TaskUpdateRequestDto.builder()
+                .title(title)
+                .description(description)
+                .assigneeId(assigneeId)
+                .ownerId(ownerId)
+                .build();
+        var taskId = UUID.randomUUID();
+
+        //and mock the returning value from findById method from repository
+        Mockito.when(taskRepository.findById(taskId))
+                .thenReturn(Mono.empty());
+
+        //when & then
+        Assertions.assertThrows(TaskNotFoundException.class,() -> {
+            taskService.update(TaskUpdateDto.builder()
+                    .taskUpdateRequestDto(taskUpdateRequestDto)
+                    .id(taskId)
+                    .build()).block();});
+
     }
 
 }
