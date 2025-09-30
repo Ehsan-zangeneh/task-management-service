@@ -25,6 +25,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.32'
     implementation 'org.postgresql:postgresql:42.7.3'
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.7.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:4.0.0-M3'
+    testImplementation 'io.projectreactor:reactor-test:3.8.0-M7'
 }
 
 test {
