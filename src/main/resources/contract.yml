@@ -19,6 +19,7 @@ paths:
           required: false
           schema:
             type: integer
+            minimum: 0
             default: 0
         - name: size
           in: query
@@ -26,6 +27,7 @@ paths:
           required: false
           schema:
             type: integer
+            minimum: 0
             default: 10
       responses:
         '200':
@@ -36,6 +38,21 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TaskDto'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                taskNotFound:
+                  summary: Task not found example
+                  value:
+                    status: 400
+                    description: Bad Request
+                    message: 'getAllTasks.size: must be greater than or equal to 0'
+                    timestamp: 2025-09-29T17:11:30.2022857+02:00
+
     post:
       summary: Create a new task
       operationId: createTask
@@ -55,7 +72,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/TaskDto'
         '400':
-          description: Bad request
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                taskNotFound:
+                  summary: Task not found example
+                  value:
+                    status: 400
+                    description: Bad Request
+                    message: [Field 'title': must not be null, Field 'ownerId': must not be null]
+                    timestamp: 2025-09-29T17:11:30.2022857+02:00
   /tasks/{id}:
     get:
       tags:
@@ -68,6 +97,7 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
           description: Task retrieved successfully
@@ -81,6 +111,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                taskNotFound:
+                  summary: Task not found example
+                  value:
+                    status: 404
+                    description: Not Found
+                    message: Task not found with id:{dfde35fe-0e61-40c2-b976-fc92bb8e8c6b}
+                    timestamp: 2025-09-29T17:11:30.2022857+02:00
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                taskNotFound:
+                  summary: Task not found example
+                  value:
+                    status: 400
+                    description: Bad Request
+                    message: 400 BAD_REQUEST "Type mismatch."
+                    timestamp: 2025-09-29T17:11:30.2022857+02:00
+
     put:
       summary: Update a task
       operationId: updateTaskById
@@ -122,6 +175,20 @@ paths:
                     description: Not Found
                     message: Task not found with id:{f295da63-b69d-4fed-8b1f-d49bbc104f2b}
                     timestamp: 2025-09-29T17:11:30.2022857+02:00
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                taskNotFound:
+                  summary: Task not found example
+                  value:
+                    status: 400
+                    description: Bad Request
+                    message: 400 BAD_REQUEST "Failed to read HTTP message"
+                    timestamp: 2025-09-29T17:11:30.2022857+02:00
 
     delete:
       summary: Delete a task by its id
@@ -146,6 +213,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                taskNotFound:
+                  summary: Task not found example
+                  value:
+                    status: 404
+                    description: Not Found
+                    message: Task not found with id:{f295da63-b69d-4fed-8b1f-d49bbc104f2b}
+                    timestamp: 2025-09-29T17:11:30.2022857+02:00
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                taskNotFound:
+                  summary: Task not found example
+                  value:
+                    status: 400
+                    description: Bad Request
+                    message: 400 BAD_REQUEST "Type mismatch."
+                    timestamp: 2025-09-29T17:11:30.2022857+02:00
 
 components:
   schemas:
@@ -253,5 +342,4 @@ components:
           $ref: '#/components/schemas/TaskStatus'
 
     ErrorMessage:
-      type: object
-      x-import: com.task.management.exception.ErrorMessage
+      type: string

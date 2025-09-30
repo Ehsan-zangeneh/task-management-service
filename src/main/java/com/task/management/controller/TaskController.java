@@ -31,7 +31,7 @@ public class TaskController implements TaskManagementApi {
     }
 
     @Override
-    public Mono<ResponseEntity<TaskDto>> getTaskById(String id, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<TaskDto>> getTaskById(UUID id, ServerWebExchange exchange) {
         return taskService.findById(id)
                 .map(ResponseEntity::ok);
     }

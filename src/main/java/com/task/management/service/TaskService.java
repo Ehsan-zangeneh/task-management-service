@@ -35,9 +35,9 @@ public class TaskService {
         return tasks.map(this::convertToDto);
     }
 
-    public Mono<TaskDto> findById(String taskId) {
+    public Mono<TaskDto> findById(UUID taskId) {
         log.info("Find task by id {}", taskId);
-        return taskRepository.findById(UUID.fromString(taskId))
+        return taskRepository.findById(taskId)
                 .switchIfEmpty(Mono.error(
                         new TaskNotFoundException("Task not found with id:{%s}".formatted(taskId))
                 ))

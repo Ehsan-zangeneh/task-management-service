@@ -6,11 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebInputException;
 
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
@@ -21,13 +20,18 @@ public class TaskManagementControllerExceptionHandler {
         return buildErrorMessage(HttpStatus.NOT_FOUND, e.getMessage(), e);
     }
 
+    @ExceptionHandler({WebExchangeBindException.class})
+    public ResponseEntity<ErrorMessage> handleWebExchangeBindException(WebExchangeBindException e) {
+        var errors = e.getFieldErrors().stream()
+                .map(error -> String.format("Field '%s': %s", error.getField(), error.getDefaultMessage()))
+                .toList();
+        var message = errors.toString();
+        return buildErrorMessage(HttpStatus.BAD_REQUEST, message,e);
+    }
+
     @ExceptionHandler({ConstraintViolationException.class, ServerWebInputException.class})
     public ResponseEntity<ErrorMessage> handleConstraintViolationException(Exception e) {
-        var message = Arrays.stream(e.getMessage().split(","))
-                .map(String::trim)
-                .map(s -> s.substring(s.indexOf(".") + 1))
-                .map("[%s]"::formatted)
-                .collect(Collectors.joining(" "));
+        var message = e.getMessage();
         return buildErrorMessage(HttpStatus.BAD_REQUEST, message,e);
     }
 
@@ -52,6 +56,5 @@ public class TaskManagementControllerExceptionHandler {
                 .build();
         return ResponseEntity.status(errorBody.getStatus()).body(errorBody);
     }
-
 
 }
