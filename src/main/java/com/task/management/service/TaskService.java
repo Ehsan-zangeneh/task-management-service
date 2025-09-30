@@ -57,7 +57,7 @@ public class TaskService {
         return task.map(this::convertToDto);
     }
 
-    public Mono<TaskDto> update(TaskUpdateDto taskUpdateDto) {
+    public Mono<TaskDto> update(@Valid TaskUpdateDto taskUpdateDto) {
         log.info("Update task {}", taskUpdateDto);
         return taskRepository.findById(taskUpdateDto.getId())
                 .switchIfEmpty(Mono.error(

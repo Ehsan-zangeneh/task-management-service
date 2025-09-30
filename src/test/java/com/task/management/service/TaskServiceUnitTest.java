@@ -1,5 +1,6 @@
 package com.task.management.service;
 
+import com.task.management.dto.TaskCreateRequestDto;
 import com.task.management.dto.TaskDto;
 import com.task.management.exception.TaskNotFoundException;
 import com.task.management.model.Task;
@@ -16,6 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.Objects;
 import java.util.UUID;
 
 
@@ -142,6 +144,39 @@ public class TaskServiceUnitTest {
                 .expectNextCount(0)
                 .verifyComplete();
 
+    }
+
+    @Test
+    void save_succeed() {
+
+        //given
+        var assigneeId = UUID.randomUUID();
+        var ownerId = UUID.randomUUID();
+        var title = "title";
+        var description = "description";
+        var taskCreateRequestDto = TaskCreateRequestDto.builder()
+                .title(title)
+                .description(description)
+                .assigneeId(assigneeId)
+                .ownerId(ownerId)
+                .build();
+
+        //and mock the returning value from save method
+        Mockito.when(taskRepository.save(Mockito.any(Task.class)))
+                .thenReturn(Mono.just(Task.builder().build()));
+
+        //when
+        var result = taskService.save(taskCreateRequestDto);
+
+        //then
+        Mockito.verify(taskRepository).save(Mockito.argThat(
+                task -> task.getAssigneeId().equals(assigneeId) &&
+                        task.getOwnerId().equals(ownerId) &&
+                        task.getTitle().equals(title) &&
+                        task.getDescription().equals(description) &&
+                        task.getStatus().equals(TaskStatus.TODO) &&
+                        Objects.nonNull(task.getCreationDate())
+        ));
     }
 
 }
