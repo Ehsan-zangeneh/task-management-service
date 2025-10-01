@@ -4,14 +4,16 @@ import com.task.management.dto.TaskCreateRequestDto;
 import com.task.management.dto.TaskDto;
 import com.task.management.dto.TaskUpdateDto;
 import com.task.management.dto.TaskUpdateRequestDto;
+import com.task.management.exception.IllegalTaskManagementOperationException;
 import com.task.management.exception.TaskNotFoundException;
 import com.task.management.model.Task;
 import com.task.management.model.TaskStatus;
 import com.task.management.repository.TaskRepository;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -129,7 +131,7 @@ public class TaskServiceUnitTest {
     }
 
     @Test
-    @DisplayName("should return an empty ")
+    @DisplayName("should return an empty collection")
     void findAll_should_succeed_with_empty_list() {
 
         // given
@@ -264,13 +266,108 @@ public class TaskServiceUnitTest {
         Mockito.when(taskRepository.findById(taskId))
                 .thenReturn(Mono.empty());
 
-        //when & then
-        Assertions.assertThrows(TaskNotFoundException.class,() -> {
-            taskService.update(TaskUpdateDto.builder()
-                    .taskUpdateRequestDto(taskUpdateRequestDto)
-                    .id(taskId)
-                    .build()).block();});
+        //when
+        var result = taskService.update(TaskUpdateDto.builder()
+                .taskUpdateRequestDto(taskUpdateRequestDto)
+                .id(taskId)
+                .build());
+
+        //then
+        StepVerifier.create(result)
+                .expectError(TaskNotFoundException.class)
+                .verify();
 
     }
+
+    @ParameterizedTest
+    @EnumSource(value = TaskStatus.class, names = {"TODO", "CANCELLED"})
+    @DisplayName("should call deleteById method from repository for valid statuses")
+    void delete_succeed(TaskStatus status) {
+
+        //given
+        var assigneeId = UUID.randomUUID();
+        var ownerId = UUID.randomUUID();
+        var title = "title";
+        var description = "description";
+        var taskId = UUID.randomUUID();
+        var task = Task.builder()
+                .id(taskId)
+                .title(title)
+                .description(description)
+                .status(status)
+                .ownerId(ownerId)
+                .assigneeId(assigneeId)
+                .creationDate(ZonedDateTime.now())
+                .build();
+
+        //and mock the returning value from findById method from repository
+        Mockito.when(taskRepository.findById(taskId))
+                .thenReturn(Mono.just(task));
+        Mockito.when(taskRepository.deleteById(taskId))
+                .thenReturn(Mono.empty());
+
+        //when
+        taskService.delete(taskId).block();
+
+        //then
+        Mockito.verify(taskRepository).deleteById(taskId);
+
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TaskStatus.class, names = {"APPROVED", "DONE", "IN_PROGRESS", "UNDER_REVIEW"})
+    @DisplayName("should throw IllegalTaskManagementOperationException for invalid statuses")
+    void delete_throw_exception(TaskStatus status) {
+
+        //given
+        var assigneeId = UUID.randomUUID();
+        var ownerId = UUID.randomUUID();
+        var title = "title";
+        var description = "description";
+        var taskId = UUID.randomUUID();
+        var task = Task.builder()
+                .id(taskId)
+                .title(title)
+                .description(description)
+                .status(status)
+                .ownerId(ownerId)
+                .assigneeId(assigneeId)
+                .creationDate(ZonedDateTime.now())
+                .build();
+
+        //and mock the returning value from findById method from repository
+        Mockito.when(taskRepository.findById(taskId))
+                .thenReturn(Mono.just(task));
+
+        //when
+        var result = taskService.delete(taskId);
+
+        //then
+        StepVerifier.create(result)
+                .expectError(IllegalTaskManagementOperationException.class)
+                .verify();
+
+    }
+
+    @Test
+    @DisplayName("should throw exception for non-existing task")
+    void delete_throw_notfound_exception() {
+
+        //given
+        var taskId = UUID.randomUUID();
+        Mockito.when(taskRepository.findById(taskId))
+                .thenReturn(Mono.empty());
+
+        //when
+        var result = taskService.delete(taskId);
+
+        //then
+        StepVerifier.create(result)
+                .expectError(TaskNotFoundException.class)
+                .verify();
+
+    }
+
+
 
 }
