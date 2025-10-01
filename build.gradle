@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.6'
     id 'org.openapi.generator' version '7.0.1'
+    id 'jacoco'
 }
 
 group = 'com.task.management'
@@ -32,6 +33,28 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.35 // should increase to 0.70
+            }
+        }
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
 
 openApiGenerate {
     generatorName = "spring"
