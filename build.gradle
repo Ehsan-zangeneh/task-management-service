@@ -15,19 +15,22 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux:3.5.6'
+    implementation 'io.projectreactor.netty:reactor-netty:1.2.10'
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc:3.5.6'
-    implementation 'io.projectreactor.netty:reactor-netty-http:1.1.7'
     implementation 'io.r2dbc:r2dbc-postgresql:0.8.13.RELEASE'
-    implementation 'org.flywaydb:flyway-core:11.13.2'
-    runtimeOnly 'org.flywaydb:flyway-database-postgresql:11.13.2'
+    implementation 'org.postgresql:postgresql:42.7.3'
     implementation 'org.openapitools:jackson-databind-nullable:0.2.7'
     implementation 'org.springframework.boot:spring-boot-starter-validation:3.5.6'
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.7.0'
+    implementation 'org.flywaydb:flyway-core:11.13.2'
     compileOnly 'org.projectlombok:lombok:1.18.32'
     annotationProcessor 'org.projectlombok:lombok:1.18.32'
-    implementation 'org.postgresql:postgresql:42.7.3'
-    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.7.0'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:4.0.0-M3'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.5.6'
     testImplementation 'io.projectreactor:reactor-test:3.8.0-M7'
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.3'
+    testImplementation 'org.testcontainers:r2dbc:1.21.3'
+    testImplementation 'org.testcontainers:postgresql:1.21.3'
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql:11.13.2'
 }
 
 test {
@@ -48,7 +51,7 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = 0.35 // should increase to 0.70
+                minimum = 0.80 // should increase to 0.70
             }
         }
     }
