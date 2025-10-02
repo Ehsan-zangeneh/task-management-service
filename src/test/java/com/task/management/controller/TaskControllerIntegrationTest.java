@@ -431,7 +431,7 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
             taskRepository.deleteAll().block();
         }
 
-        @ParameterizedTest(name = "Illegal params: updateTitle={0}, taskAssigneeId={1}, taskStatus={2}, updatedDescription{3}")
+        @ParameterizedTest(name = "Valid params: updateTitle={0}, updatedDescription{1}, taskAssigneeId={2}, taskStatus={3}")
         @MethodSource("taskUpdateValidArgumentProvider")
         @DisplayName("should update a task by id")
         void put_succeed(String updateTitle,
@@ -479,7 +479,7 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
                         assert taskDto.getTitle().equals(title);
                         assert taskDto.getDescription().equals(description);
                         assert taskDto.getOwnerId().equals(ownerId);
-                        assert taskDto.getAssigneeId().equals(assigneeId);
+                        assert taskDto.getAssigneeId() == null || taskDto.getAssigneeId().equals(assigneeId);
                         assert taskDto.getStatus().name().equals(status.name());
                         assert taskDto.getCreationDate() != null;
                         assert taskDto.getModificationDate() != null;
@@ -535,49 +535,131 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
 
         }
 
-//        @Test
-//        @DisplayName("should throw exception because of illegal operation")
-//        void put_illegal_operation_error() {
-//
-//            //give
-//            var task = taskRepository.save(Task.builder()
-//                    .title("title")
-//                    .description("description")
-//                    .ownerId(ownerId)
-//                    .creationDate(ZonedDateTime.now())
-//                    .status(TaskStatus.TODO)
-//                    .build()).block();
-//        }
+        @Test
+        @DisplayName("should throw NotFoundException")
+        void put_illegal_operation_error() {
 
-//        @ParameterizedTest(name = "Invalid params: title={0}, ownerId={1}, errorMessage={2}")
-//        @MethodSource("")
-//        @DisplayName("should throw validation exception")
-//        void put_validation_error(String title, UUID ownerId, String errorMessage) {
-//
-//
-//        }
-public Stream<Arguments> taskUpdateValidArgumentProvider() {
-    return Stream.of(
-            Arguments.of("task title",
-                    "New Description",
-                    UUID.randomUUID(),
-                    com.task.management.dto.TaskStatus.IN_PROGRESS),
-            Arguments.of("task title",
-                    "New Description",
-                    UUID.randomUUID(),
-                    com.task.management.dto.TaskStatus.DONE),
-            Arguments.of("task title",
-                    "New Description",
-                    UUID.randomUUID(),
-                    com.task.management.dto.TaskStatus.APPROVED,
-                    HttpStatus.BAD_REQUEST,
-                    "must not be blank"),
-            Arguments.of("task title",
-                    "New Description",
-                    UUID.randomUUID(),
-                    com.task.management.dto.TaskStatus.UNDER_REVIEW)
-    );
-}
+            //given
+            var task = taskRepository.save(Task.builder()
+                    .title("title")
+                    .description("description")
+                    .ownerId(UUID.randomUUID())
+                    .creationDate(ZonedDateTime.now())
+                    .status(TaskStatus.TODO)
+                    .build()).block();
+
+            //and
+            var nonExistingTaskId = UUID.randomUUID();
+            var updateRequestDto = TaskUpdateRequestDto.builder()
+                    .title("updateTitle")
+                    .description("updatedDescription")
+                    .build();
+
+            //when
+            var response = webTestClient.put()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/tasks/{id}")
+                            .build(nonExistingTaskId))
+                    .body(Mono.just(updateRequestDto), TaskCreateRequestDto.class)
+                    .exchange();
+
+            //then
+            response.expectStatus().isEqualTo(HttpStatus.NOT_FOUND)
+                    .expectBody(String.class)
+                    .consumeWith(result -> {
+                        String errorResponse = result.getResponseBody();
+                        assert errorResponse != null;
+                        assert errorResponse.contains("Task not found");
+                    });
+
+        }
+
+        @Test
+        @DisplayName("should keep current values")
+        void put_keep_current_values() {
+
+            //given
+            var title = "title";
+            var description = "description";
+            var assigneeId = UUID.randomUUID();
+            var status = TaskStatus.TODO;
+            var task = taskRepository.save(Task.builder()
+                    .title(title)
+                    .description(description)
+                    .ownerId(UUID.randomUUID())
+                    .assigneeId(assigneeId)
+                    .creationDate(ZonedDateTime.now())
+                    .status(status)
+                    .build()).block();
+
+            //and
+            var updateRequestDto = TaskUpdateRequestDto.builder()
+                    .title(null)
+                    .description(null)
+                    .assigneeId(null)
+                    .status(null)
+                    .build();
+
+            //when
+            var response = webTestClient.put()
+                    .uri(uriBuilder ->
+                            uriBuilder.path("/tasks/{id}")
+                                    .build(task.getId()))
+                    .body(Mono.just(updateRequestDto), TaskCreateRequestDto.class)
+                    .exchange();
+
+            //then
+            response.expectStatus().isOk()
+                    .expectBody(TaskDto.class)
+                    .consumeWith(result -> {
+                        TaskDto taskDto = result.getResponseBody();
+                        assert taskDto != null;
+                        assert taskDto.getTitle().equals(title);
+                        assert taskDto.getDescription().equals(description);
+                        assert taskDto.getAssigneeId().equals(assigneeId);
+                        assert taskDto.getStatus().name().equals(status.name());
+                        assert taskDto.getCreationDate() != null;
+                        assert taskDto.getModificationDate() != null;
+                        assert taskDto.getOwnerId() != null;
+                    });
+
+        }
+
+        public Stream<Arguments> taskUpdateValidArgumentProvider() {
+            return Stream.of(
+                    Arguments.of("task title",
+                            "New Description",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.IN_PROGRESS),
+                    Arguments.of("task title",
+                            "New Description",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.DONE),
+                    Arguments.of("task title",
+                            "New Description",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.APPROVED),
+                    Arguments.of("task title",
+                            "New Description",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.UNDER_REVIEW),
+                    Arguments.of("task title",
+                            "New Description",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.TODO),
+                    Arguments.of("task title",
+                            "New Description",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.CANCELLED),
+                    Arguments.of("task title",
+                            "New Description",
+                            null,
+                            com.task.management.dto.TaskStatus.TODO),
+                    Arguments.of("task title",
+                            "New Description",
+                            null,
+                            com.task.management.dto.TaskStatus.CANCELLED));
+        }
 
         public Stream<Arguments> taskUpdateInvalidArgumentProvider() {
             return Stream.of(
@@ -609,4 +691,5 @@ public Stream<Arguments> taskUpdateValidArgumentProvider() {
         }
 
     }
+
 }

@@ -83,19 +83,16 @@ public class TaskService {
     }
 
 
-    private Task merge(Task task, TaskUpdateRequestDto taskUpdateRequestDto) {
+    private Task merge(Task task, TaskUpdateRequestDto requestDto) {
         var taskBuilder = task.toBuilder()
-                .assigneeId(taskUpdateRequestDto.getAssigneeId())
-                .description(taskUpdateRequestDto.getDescription())
-                .title(taskUpdateRequestDto.getTitle())
-                .modificationDate(ZonedDateTime.now());
-        if (taskUpdateRequestDto.getStatus() != null) {
-                taskBuilder.status(TaskStatus.valueOf(taskUpdateRequestDto.getStatus().getValue()));
-
-        }
+                .assigneeId(requestDto.getAssigneeId() != null ? requestDto.getAssigneeId() : task.getAssigneeId())
+                .description(requestDto.getDescription() != null ? requestDto.getDescription() : task.getDescription())
+                .title(requestDto.getTitle()  != null ? requestDto.getTitle() : task.getTitle())
+                .modificationDate(ZonedDateTime.now())
+                .status(requestDto.getStatus() != null ? TaskStatus.valueOf(requestDto.getStatus().getValue()) : task.getStatus());
         var mergedTask = taskBuilder.build();
         if(isInvalidForUpdate(mergedTask)) {
-            throw new IllegalTaskManagementOperationException("The task with id:{%s} not valid for update".formatted(task.getId()));
+            throw new IllegalTaskManagementOperationException("The task with id:{%s} is not valid for update".formatted(task.getId()));
         }
         return mergedTask;
     }
