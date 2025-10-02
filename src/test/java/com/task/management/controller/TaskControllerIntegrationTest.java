@@ -1,10 +1,11 @@
 package com.task.management.controller;
 
+import com.task.management.common.IntegrationTest;
 import com.task.management.dto.TaskDto;
 import com.task.management.model.Task;
 import com.task.management.model.TaskStatus;
-import com.task.management.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Nested;
@@ -14,59 +15,61 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
+import javax.print.DocFlavor;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @AutoConfigureWebTestClient
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
-public class TaskControllerIntegrationTest {
-
-    static DockerImageName myImage = DockerImageName.parse("docker.arvancloud.ir/postgres").asCompatibleSubstituteFor("postgres");
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(myImage)
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        postgres.start();
-        registry.add("spring.r2dbc.url", () ->
-                "r2dbc:postgresql://" + postgres.getHost() + ":" + postgres.getMappedPort(5432) + "/" + postgres.getDatabaseName());
-        registry.add("spring.r2dbc.username", postgres::getUsername);
-        registry.add("spring.r2dbc.password", postgres::getPassword);
-
-        registry.add("spring.flyway.url", postgres::getJdbcUrl);
-        registry.add("spring.flyway.user", postgres::getUsername);
-        registry.add("spring.flyway.password", postgres::getPassword);
-    }
-
-    @Autowired
-    private WebTestClient webTestClient;
-
-    @Autowired
-    private TaskRepository taskRepository;
+public class TaskControllerIntegrationTest extends IntegrationTest {
 
     @Nested
     @DisplayName("Test Get /tasks")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-    class GetAllTasks {
+    class GetAllTest {
+        static List<Task> tasksInDatabase = List.of(
+                Task.builder()
+                        .title("Task 1")
+                        .description("Description 1")
+                        .status(TaskStatus.DONE)
+                        .build(),
+                Task.builder()
+                        .title("Task 2")
+                        .description("Description 2")
+                        .status(TaskStatus.IN_PROGRESS)
+                        .build(),
+                Task.builder()
+                        .title("Task 3")
+                        .description("Description 3")
+                        .status(TaskStatus.UNDER_REVIEW)
+                        .build(),
+                Task.builder()
+                        .title("Task 4")
+                        .description("Description 4")
+                        .status(TaskStatus.TODO)
+                        .build(),
+                Task.builder()
+                        .title("Task 5")
+                        .description("Description 5")
+                        .status(TaskStatus.CANCELLED)
+                        .build(),
+                Task.builder()
+                        .title("Task 6")
+                        .description("Description 6")
+                        .status(TaskStatus.APPROVED)
+                        .build()
+        );
+
 
         @BeforeAll
         void setupAll() {
@@ -146,7 +149,7 @@ public class TaskControllerIntegrationTest {
         })
         @DisplayName("should throw exception for illegal parameter")
         @Order(3)
-        void test_getAll_throw_exception(int page, int size) {
+        void test_getAll_validation_error(int page, int size) {
 
             //when
             var response = webTestClient.get()
@@ -194,37 +197,103 @@ public class TaskControllerIntegrationTest {
         }
 }
 
-    static List<Task> tasksInDatabase = List.of(
-            Task.builder()
+    @Nested
+    @DisplayName("Test Get /tasks/{id}")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class GetByIdTest {
+
+        @BeforeEach
+        void setup() {
+            taskRepository.deleteAll().block();
+        }
+
+        @Test
+        @DisplayName("should return a task")
+        void test_getById_succeed() {
+            //given
+            Task task = Task.builder()
                     .title("Task 1")
-                    .description("Description 1")
+                    .description("description")
                     .status(TaskStatus.DONE)
-                    .build(),
-            Task.builder()
-                    .title("Task 2")
-                    .description("Description 2")
-                    .status(TaskStatus.IN_PROGRESS)
-                    .build(),
-            Task.builder()
-                    .title("Task 3")
-                    .description("Description 3")
-                    .status(TaskStatus.UNDER_REVIEW)
-                    .build(),
-            Task.builder()
-                    .title("Task 4")
-                    .description("Description 4")
-                    .status(TaskStatus.TODO)
-                    .build(),
-            Task.builder()
-                    .title("Task 5")
-                    .description("Description 5")
-                    .status(TaskStatus.CANCELLED)
-                    .build(),
-            Task.builder()
-                    .title("Task 6")
-                    .description("Description 6")
-                    .status(TaskStatus.APPROVED)
-                    .build()
-    );
+                    .build();
+            var taskId = Objects.requireNonNull(taskRepository.save(task).block())
+                    .getId();
+
+            //when
+            var response = webTestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/tasks/{id}")
+                            .build(taskId.toString()))
+                    .exchange();
+
+            //then
+            response.expectStatus().isOk()
+                    .expectBody(TaskDto.class)
+                    .consumeWith(result -> {
+                        TaskDto taskDto = result.getResponseBody();
+                        assert taskDto != null;
+                        assert taskDto.getTitle().equals("Task 1");
+                        assert taskDto.getDescription().equals("description");
+                        assert taskDto.getStatus().name().equals(TaskStatus.DONE.name());
+                    });
+
+        }
+
+        @Test
+        @DisplayName("should throw TaskNotFoundException")
+        void test_getById_throw_not_found() {
+            //given
+            Task task = Task.builder()
+                    .title("Task 1")
+                    .description("description")
+                    .status(TaskStatus.DONE)
+                    .build();
+            taskRepository.save(task).block();
+            var nonExistingTaskId = UUID.randomUUID();
+
+            //when
+            var response = webTestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/tasks/{id}")
+                            .build(nonExistingTaskId.toString()))
+                    .exchange();
+
+            //then
+            response.expectStatus().isNotFound()
+                    .expectBody(String.class)
+                    .consumeWith(result -> {
+                        String errorResponse = result.getResponseBody();
+                        assert errorResponse != null &&
+                                errorResponse.contains("not found with id:{%s}".formatted(nonExistingTaskId.toString()));
+                    });
+
+        }
+
+        @Test
+        @DisplayName("should throw TaskNotFoundException")
+        void test_getById_validation_error() {
+            //given
+            var invalidTaskId = "invalidTaskId";
+            //when
+            var response = webTestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/tasks/{id}")
+                            .build(invalidTaskId))
+                    .exchange();
+
+            //then
+            response.expectStatus().isBadRequest()
+                    .expectBody(String.class)
+                    .consumeWith(result -> {
+                        String errorResponse = result.getResponseBody();
+                        assert errorResponse != null &&
+                                errorResponse.contains("Type mismatch.");
+                    });
+
+        }
+
+
+    }
+
 
 }
