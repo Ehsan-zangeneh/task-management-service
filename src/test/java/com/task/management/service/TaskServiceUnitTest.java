@@ -206,7 +206,6 @@ public class TaskServiceUnitTest {
                 .title(title)
                 .description(description)
                 .assigneeId(assigneeId)
-                .ownerId(ownerId)
                 .build();
         var taskId = UUID.randomUUID();
 
@@ -258,7 +257,6 @@ public class TaskServiceUnitTest {
                 .title(title)
                 .description(description)
                 .assigneeId(assigneeId)
-                .ownerId(ownerId)
                 .build();
         var taskId = UUID.randomUUID();
 

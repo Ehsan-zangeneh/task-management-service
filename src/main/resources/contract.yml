@@ -317,23 +317,16 @@ components:
 
     TaskUpdateRequestDto:
       type: object
-      required:
-        - title
-        - ownerId
       properties:
         title:
           type: string
-          minLength: 1
+          pattern: '^(?!\s*$).+'
           description: Title of the task
           example: "Update documentation"
         description:
           type: string
           description: Detailed description of the task
           example: "Revise the API documentation for the task module"
-        ownerId:
-          allOf:
-            - $ref: '#/components/schemas/UUID'
-            - example: "f47ac10b-58cc-4372-a567-0e02b2c3d414"
         assigneeId:
           allOf:
             - $ref: '#/components/schemas/UUID'

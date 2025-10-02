@@ -3,8 +3,11 @@ package com.task.management.controller;
 import com.task.management.common.IntegrationTest;
 import com.task.management.dto.TaskCreateRequestDto;
 import com.task.management.dto.TaskDto;
+import com.task.management.dto.TaskUpdateRequestDto;
 import com.task.management.model.Task;
 import com.task.management.model.TaskStatus;
+import com.task.management.repository.TaskRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +21,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
@@ -25,6 +29,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Mono;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -36,6 +41,10 @@ import java.util.stream.Stream;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 public class TaskControllerIntegrationTest extends IntegrationTest {
+
+
+    @Autowired
+    private TaskRepository taskRepository;
 
     @Nested
     @DisplayName("Test Get /tasks")
@@ -371,7 +380,7 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
         }
 
         @ParameterizedTest(name = "Invalid params: title={0}, ownerId={1}, errorMessage={2}")
-        @MethodSource("stringAndUuidProvider")
+        @MethodSource("argumentProvider")
         @DisplayName("should throw validation exception")
         void post_validation_error(String title, UUID ownerId, String errorMessage) {
 
@@ -401,7 +410,7 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
 
         }
 
-        public Stream<Arguments> stringAndUuidProvider() {
+        public Stream<Arguments> argumentProvider() {
 
             return Stream.of(
                     Arguments.of("title", null, "[Field 'ownerId': must not be null]"),
@@ -412,5 +421,146 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
 
     }
 
+    @Nested
+    @DisplayName("Test put /tasks/{id}")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class PutTest {
 
+        @BeforeEach
+        void setup() {
+            taskRepository.deleteAll().block();
+        }
+
+        @Test
+        @DisplayName("should update a task by id")
+        void put_succeed() {
+
+            //given
+            var ownerId = UUID.randomUUID();
+            var task = taskRepository.save(Task.builder()
+                    .title("title")
+                    .description("description")
+                    .ownerId(ownerId)
+                    .creationDate(ZonedDateTime.now())
+                    .status(TaskStatus.TODO)
+                    .build()).block();
+
+            //and
+            var updatedDescription = "update description value";
+            var updateTitle = "update title value";
+            var assigneeId = UUID.randomUUID();
+            var updateRequestDto = TaskUpdateRequestDto.builder()
+                    .description(updatedDescription)
+                    .title(updateTitle)
+                    .assigneeId(assigneeId)
+                    .status(com.task.management.dto.TaskStatus.APPROVED)
+                    .build();
+            Assertions.assertNotNull(task);
+            var existingTaskId = task.getId();
+
+            //when
+            var response = webTestClient.put()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/tasks/{id}")
+                            .build(existingTaskId))
+                    .body(Mono.just(updateRequestDto), TaskCreateRequestDto.class)
+                    .exchange();
+
+            //then
+            response.expectStatus().isOk()
+                    .expectBody(TaskDto.class)
+                    .consumeWith(result -> {
+                        TaskDto taskDto = result.getResponseBody();
+                        assert taskDto != null;
+                        assert taskDto.getTitle().equals(updateTitle);
+                        assert taskDto.getDescription().equals(updatedDescription);
+                        assert taskDto.getOwnerId().equals(ownerId);
+                        assert taskDto.getAssigneeId().equals(assigneeId);
+                        assert taskDto.getStatus().name().equals(TaskStatus.APPROVED.name());
+                        assert taskDto.getCreationDate() != null;
+                        assert taskDto.getModificationDate() != null;
+                    });
+
+        }
+
+        @ParameterizedTest(name = "Illegal params: taskIdForUpdate={0}, updateTitle={1}, assigneeId={2}, taskStatus={3}")
+        @MethodSource("taskUpdateArgumentProvider")
+        @DisplayName("should throw exception")
+        void put_throw_exception(UUID taskIdForUpdate,
+                                 String updateTitle,
+                                 UUID assigneeId,
+                                 com.task.management.dto.TaskStatus taskStatus,
+                                 HttpStatus httpStatus,
+                                 String errorMessage) {
+
+            //given
+            var ownerId = UUID.randomUUID();
+            var task = taskRepository.save(Task.builder()
+                    .title("title")
+                    .description("description")
+                    .ownerId(ownerId)
+                    .creationDate(ZonedDateTime.now())
+                    .status(TaskStatus.TODO)
+                    .build()).block();
+
+            var taskId = taskIdForUpdate != null ? taskIdForUpdate : task.getId();
+
+            //and
+            var updateRequestDto = TaskUpdateRequestDto.builder()
+                    .title(updateTitle)
+                    .assigneeId(assigneeId)
+                    .status(taskStatus)
+                    .build();
+
+            //when
+            var response = webTestClient.put()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/tasks/{id}")
+                            .build(taskId))
+                    .body(Mono.just(updateRequestDto), TaskCreateRequestDto.class)
+                    .exchange();
+
+            //then
+            response.expectStatus().isEqualTo(httpStatus)
+                    .expectBody(String.class)
+                    .consumeWith(result -> {
+                        String errorResponse = result.getResponseBody();
+                        assert errorResponse != null;
+                        assert errorResponse.contains(errorMessage);
+                    });
+
+        }
+
+//        @ParameterizedTest(name = "Invalid params: title={0}, ownerId={1}, errorMessage={2}")
+//        @MethodSource("")
+//        @DisplayName("should throw validation exception")
+//        void put_validation_error(String title, UUID ownerId, String errorMessage) {
+//
+//
+//        }
+
+        public Stream<Arguments> taskUpdateArgumentProvider() {
+            return Stream.of(
+                    Arguments.of(UUID.randomUUID(),
+                            "task title",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.IN_PROGRESS,
+                            HttpStatus.NOT_FOUND,
+                            "Task not found"),
+                    Arguments.of(null,
+                            "",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.IN_PROGRESS,
+                            HttpStatus.BAD_REQUEST,
+                            "must not be blank"),
+                    Arguments.of(null,
+                            "    ",
+                            UUID.randomUUID(),
+                            com.task.management.dto.TaskStatus.IN_PROGRESS,
+                            HttpStatus.BAD_REQUEST,
+                            "must not be blank")
+            );
+        }
+
+    }
 }

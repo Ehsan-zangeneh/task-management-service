@@ -44,6 +44,4 @@ public class IntegrationTest {
     @Autowired
     protected WebTestClient webTestClient;
 
-    @Autowired
-    protected TaskRepository taskRepository;
 }

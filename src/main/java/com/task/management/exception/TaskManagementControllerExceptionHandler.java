@@ -25,6 +25,7 @@ public class TaskManagementControllerExceptionHandler {
     public ResponseEntity<ErrorMessage> handleWebExchangeBindException(WebExchangeBindException e) {
         var errors = e.getFieldErrors().stream()
                 .map(error -> String.format("Field '%s': %s", error.getField(), error.getDefaultMessage()))
+                .map(MessagePatternReplacement::replace)
                 .toList();
         var message = errors.toString();
         return buildErrorMessage(HttpStatus.BAD_REQUEST, message,e);
