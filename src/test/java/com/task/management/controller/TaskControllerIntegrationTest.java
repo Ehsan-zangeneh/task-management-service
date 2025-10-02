@@ -431,32 +431,36 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
             taskRepository.deleteAll().block();
         }
 
-        @Test
+        @ParameterizedTest(name = "Illegal params: updateTitle={0}, taskAssigneeId={1}, taskStatus={2}, updatedDescription{3}")
+        @MethodSource("taskUpdateValidArgumentProvider")
         @DisplayName("should update a task by id")
-        void put_succeed() {
+        void put_succeed(String updateTitle,
+                         String updatedDescription,
+                         UUID taskAssigneeId,
+                         com.task.management.dto.TaskStatus taskStatus) {
 
             //given
-            var ownerId = UUID.randomUUID();
             var task = taskRepository.save(Task.builder()
                     .title("title")
                     .description("description")
-                    .ownerId(ownerId)
+                    .ownerId(UUID.randomUUID())
                     .creationDate(ZonedDateTime.now())
                     .status(TaskStatus.TODO)
                     .build()).block();
 
             //and
-            var updatedDescription = "update description value";
-            var updateTitle = "update title value";
-            var assigneeId = UUID.randomUUID();
             var updateRequestDto = TaskUpdateRequestDto.builder()
-                    .description(updatedDescription)
                     .title(updateTitle)
-                    .assigneeId(assigneeId)
-                    .status(com.task.management.dto.TaskStatus.APPROVED)
+                    .description(updatedDescription)
+                    .assigneeId(taskAssigneeId)
+                    .status(taskStatus)
                     .build();
-            Assertions.assertNotNull(task);
             var existingTaskId = task.getId();
+            var title = updateTitle !=  null ? updateTitle : task.getTitle();
+            var description = updatedDescription !=  null ? updatedDescription : task.getDescription();
+            var ownerId = task.getOwnerId();
+            var status = taskStatus != null ? taskStatus : task.getStatus();
+            var assigneeId = taskAssigneeId != null ? taskAssigneeId : task.getAssigneeId();
 
             //when
             var response = webTestClient.put()
@@ -472,11 +476,11 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
                     .consumeWith(result -> {
                         TaskDto taskDto = result.getResponseBody();
                         assert taskDto != null;
-                        assert taskDto.getTitle().equals(updateTitle);
-                        assert taskDto.getDescription().equals(updatedDescription);
+                        assert taskDto.getTitle().equals(title);
+                        assert taskDto.getDescription().equals(description);
                         assert taskDto.getOwnerId().equals(ownerId);
                         assert taskDto.getAssigneeId().equals(assigneeId);
-                        assert taskDto.getStatus().name().equals(TaskStatus.APPROVED.name());
+                        assert taskDto.getStatus().name().equals(status.name());
                         assert taskDto.getCreationDate() != null;
                         assert taskDto.getModificationDate() != null;
                     });
@@ -484,7 +488,7 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
         }
 
         @ParameterizedTest(name = "Illegal params: taskIdForUpdate={0}, updateTitle={1}, assigneeId={2}, taskStatus={3}")
-        @MethodSource("taskUpdateArgumentProvider")
+        @MethodSource("taskUpdateInvalidArgumentProvider")
         @DisplayName("should throw exception")
         void put_throw_exception(UUID taskIdForUpdate,
                                  String updateTitle,
@@ -531,6 +535,20 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
 
         }
 
+//        @Test
+//        @DisplayName("should throw exception because of illegal operation")
+//        void put_illegal_operation_error() {
+//
+//            //give
+//            var task = taskRepository.save(Task.builder()
+//                    .title("title")
+//                    .description("description")
+//                    .ownerId(ownerId)
+//                    .creationDate(ZonedDateTime.now())
+//                    .status(TaskStatus.TODO)
+//                    .build()).block();
+//        }
+
 //        @ParameterizedTest(name = "Invalid params: title={0}, ownerId={1}, errorMessage={2}")
 //        @MethodSource("")
 //        @DisplayName("should throw validation exception")
@@ -538,8 +556,30 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
 //
 //
 //        }
+public Stream<Arguments> taskUpdateValidArgumentProvider() {
+    return Stream.of(
+            Arguments.of("task title",
+                    "New Description",
+                    UUID.randomUUID(),
+                    com.task.management.dto.TaskStatus.IN_PROGRESS),
+            Arguments.of("task title",
+                    "New Description",
+                    UUID.randomUUID(),
+                    com.task.management.dto.TaskStatus.DONE),
+            Arguments.of("task title",
+                    "New Description",
+                    UUID.randomUUID(),
+                    com.task.management.dto.TaskStatus.APPROVED,
+                    HttpStatus.BAD_REQUEST,
+                    "must not be blank"),
+            Arguments.of("task title",
+                    "New Description",
+                    UUID.randomUUID(),
+                    com.task.management.dto.TaskStatus.UNDER_REVIEW)
+    );
+}
 
-        public Stream<Arguments> taskUpdateArgumentProvider() {
+        public Stream<Arguments> taskUpdateInvalidArgumentProvider() {
             return Stream.of(
                     Arguments.of(UUID.randomUUID(),
                             "task title",
@@ -558,7 +598,13 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
                             UUID.randomUUID(),
                             com.task.management.dto.TaskStatus.IN_PROGRESS,
                             HttpStatus.BAD_REQUEST,
-                            "must not be blank")
+                            "must not be blank"),
+                    Arguments.of(null,
+                            "valid title",
+                            null,
+                            com.task.management.dto.TaskStatus.IN_PROGRESS,
+                            HttpStatus.BAD_REQUEST,
+                            "not valid for update")
             );
         }
 

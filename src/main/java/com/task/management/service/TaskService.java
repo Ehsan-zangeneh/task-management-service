@@ -73,7 +73,7 @@ public class TaskService {
         return taskRepository.findById(taskId)
                 .switchIfEmpty(Mono.error(new TaskNotFoundException("Task not found with id:{%s}".formatted(taskId))))
                 .flatMap(task -> {
-                    if (!checkValidityForRemove(task)) {
+                    if (!isValidityForRemove(task)) {
                         return Mono.error(new IllegalTaskManagementOperationException(
                                 "The task with id:{%s} not valid for deletion".formatted(task.getId())
                         ));
@@ -82,11 +82,6 @@ public class TaskService {
                 });
     }
 
-
-    private boolean checkValidityForRemove(Task task) {
-        return task.getStatus().equals(TaskStatus.TODO)
-                || task.getStatus().equals(TaskStatus.CANCELLED);
-    }
 
     private Task merge(Task task, TaskUpdateRequestDto taskUpdateRequestDto) {
         var taskBuilder = task.toBuilder()
@@ -98,7 +93,26 @@ public class TaskService {
                 taskBuilder.status(TaskStatus.valueOf(taskUpdateRequestDto.getStatus().getValue()));
 
         }
-        return taskBuilder.build();
+        var mergedTask = taskBuilder.build();
+        if(isInvalidForUpdate(mergedTask)) {
+            throw new IllegalTaskManagementOperationException("The task with id:{%s} not valid for update".formatted(task.getId()));
+        }
+        return mergedTask;
+    }
+
+
+    private boolean isInvalidForUpdate(Task task) {
+        log.info("Check update validity for task {}", task);
+        return task.getAssigneeId() == null &&
+                (task.getStatus().equals(TaskStatus.IN_PROGRESS) ||
+                        task.getStatus().equals(TaskStatus.DONE) ||
+                        task.getStatus().equals(TaskStatus.UNDER_REVIEW) ||
+                        task.getStatus().equals(TaskStatus.APPROVED));
+    }
+
+    private boolean isValidityForRemove(Task task) {
+        return task.getStatus().equals(TaskStatus.TODO)
+                || task.getStatus().equals(TaskStatus.CANCELLED);
     }
 
     private TaskDto convertToDto(Task task) {
