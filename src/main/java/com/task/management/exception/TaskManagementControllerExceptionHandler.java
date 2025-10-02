@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebInputException;
+import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
 import java.time.ZonedDateTime;
 
@@ -29,15 +30,20 @@ public class TaskManagementControllerExceptionHandler {
         return buildErrorMessage(HttpStatus.BAD_REQUEST, message,e);
     }
 
+    @ExceptionHandler({IllegalTaskManagementOperationException.class})
+    public ResponseEntity<ErrorMessage> handleIllegalTaskManagementOperationException(IllegalTaskManagementOperationException e) {
+        return buildErrorMessage(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+    }
+
+    @ExceptionHandler({UnsupportedMediaTypeStatusException.class})
+    public ResponseEntity<ErrorMessage> handleUnsupportedMediaTypeStatusException(UnsupportedMediaTypeStatusException e) {
+        return buildErrorMessage(HttpStatus.UNSUPPORTED_MEDIA_TYPE, e.getMessage(), e);
+    }
+
     @ExceptionHandler({ConstraintViolationException.class, ServerWebInputException.class})
     public ResponseEntity<ErrorMessage> handleConstraintViolationException(Exception e) {
         var message = e.getMessage();
         return buildErrorMessage(HttpStatus.BAD_REQUEST, message,e);
-    }
-
-    @ExceptionHandler({IllegalTaskManagementOperationException.class})
-    public ResponseEntity<ErrorMessage> handleIllegalTaskManagementOperationException(IllegalTaskManagementOperationException e) {
-        return buildErrorMessage(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
 
     @ExceptionHandler({Exception.class})

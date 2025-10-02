@@ -1,6 +1,7 @@
 package com.task.management.controller;
 
 import com.task.management.common.IntegrationTest;
+import com.task.management.dto.TaskCreateRequestDto;
 import com.task.management.dto.TaskDto;
 import com.task.management.model.Task;
 import com.task.management.model.TaskStatus;
@@ -14,16 +15,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import reactor.core.publisher.Mono;
 
-import javax.print.DocFlavor;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @AutoConfigureWebTestClient
@@ -292,6 +297,118 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
 
         }
 
+
+    }
+
+    @Nested
+    @DisplayName("Test post /tasks")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class PostTest {
+
+        @BeforeEach
+        void setup() {
+            taskRepository.deleteAll().block();
+        }
+
+        @Test
+        @DisplayName("should create a task with status 'TODO'")
+        void post_succeed() {
+
+            //given
+            var ownerId = UUID.randomUUID();
+            var assigneeId = UUID.randomUUID();
+            var taskCreateRequest = TaskCreateRequestDto.builder()
+                    .description("description")
+                    .title("title")
+                    .ownerId(ownerId)
+                    .assigneeId(assigneeId)
+                    .build();
+
+            //when
+            var response = webTestClient.post()
+                    .uri("/tasks")
+                    .body(Mono.just(taskCreateRequest), TaskCreateRequestDto.class)
+                    .exchange();
+
+            //then
+            response.expectStatus().isCreated()
+                    .expectBody(TaskDto.class)
+                    .consumeWith(result -> {
+                        TaskDto taskDto = result.getResponseBody();
+                        assert taskDto != null;
+                        assert taskDto.getTitle().equals("title");
+                        assert taskDto.getDescription().equals("description");
+                        assert taskDto.getOwnerId().equals(ownerId);
+                        assert taskDto.getAssigneeId().equals(assigneeId);
+                        assert taskDto.getStatus().name().equals(TaskStatus.TODO.name());
+                        assert taskDto.getCreationDate() != null;
+                    });
+
+        }
+
+        @Test
+        @DisplayName("should throw exception")
+        void post_throw_exception() {
+
+            //given
+            var invalidRequestBody = Mono.empty();
+
+            //when
+            var response = webTestClient.post()
+                    .uri("/tasks")
+                    .body(invalidRequestBody, TaskCreateRequestDto.class)
+                    .exchange();
+
+            //then
+            response.expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                    .expectBody(String.class)
+                    .consumeWith(result -> {
+                        String errorResponse = result.getResponseBody();
+                        assert errorResponse != null;
+                        assert errorResponse.contains("not supported");
+                    });
+
+        }
+
+        @ParameterizedTest(name = "Invalid params: title={0}, ownerId={1}, errorMessage={2}")
+        @MethodSource("stringAndUuidProvider")
+        @DisplayName("should throw validation exception")
+        void post_validation_error(String title, UUID ownerId, String errorMessage) {
+
+            //given
+            var assigneeId = UUID.randomUUID();
+            var taskCreateRequest = TaskCreateRequestDto.builder()
+                    .description("description")
+                    .title(title)
+                    .ownerId(ownerId)
+                    .assigneeId(assigneeId)
+                    .build();
+
+            //when
+            var response = webTestClient.post()
+                    .uri("/tasks")
+                    .body(Mono.just(taskCreateRequest), TaskCreateRequestDto.class)
+                    .exchange();
+
+            //then
+            response.expectStatus().isBadRequest()
+                    .expectBody(String.class)
+                    .consumeWith(result -> {
+                        String errorResponse  = result.getResponseBody();
+                        assert errorResponse != null;
+                        assert errorResponse.contains(errorMessage);
+                    });
+
+        }
+
+        public Stream<Arguments> stringAndUuidProvider() {
+
+            return Stream.of(
+                    Arguments.of("title", null, "[Field 'ownerId': must not be null]"),
+                    Arguments.of(null, UUID.randomUUID(),  "[Field 'title': must not be null]"),
+                    Arguments.of("", UUID.randomUUID(), "size must be between 1 and 2147483647")
+            );
+        }
 
     }
 
