@@ -24,7 +24,7 @@ on the <b>Windows OS</b> you can simply run the .bat file:<br/>
 navigate to the project folder and run:
 <i><b>.\run-app-on-windows.bat</i></b><br/>
 
-you need docker be run on your environment.Also a docker network named<br/>
+you need docker be running on your environment. Also, a docker network named<br/>
 "application-network" is required.
 1) build the project: <i><b>gradle clean build </i></b> [-x test]
 2) create docker image: <i><b>docker build -t task-manager . </i></b> (don't forget the dot)
