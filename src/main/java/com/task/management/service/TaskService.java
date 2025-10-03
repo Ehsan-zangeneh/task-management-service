@@ -9,11 +9,9 @@ import com.task.management.exception.TaskNotFoundException;
 import com.task.management.model.Task;
 import com.task.management.model.TaskStatus;
 import com.task.management.repository.TaskRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -24,7 +22,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Validated
 public class TaskService {
 
     private final TaskRepository taskRepository;
@@ -44,7 +41,7 @@ public class TaskService {
                 .map(this::convertToDto);
     }
 
-    public Mono<TaskDto> save(@Valid TaskCreateRequestDto taskCreationRequestDto) {
+    public Mono<TaskDto> save(TaskCreateRequestDto taskCreationRequestDto) {
         log.info("Save task {}", taskCreationRequestDto);
         var task = taskRepository.save(Task.builder()
                 .assigneeId(taskCreationRequestDto.getAssigneeId())
@@ -57,7 +54,7 @@ public class TaskService {
         return task.map(this::convertToDto);
     }
 
-    public Mono<TaskDto> update(@Valid TaskUpdateDto taskUpdateDto) {
+    public Mono<TaskDto> update(TaskUpdateDto taskUpdateDto) {
         log.info("Update task {}", taskUpdateDto);
         return taskRepository.findById(taskUpdateDto.getId())
                 .switchIfEmpty(Mono.error(
