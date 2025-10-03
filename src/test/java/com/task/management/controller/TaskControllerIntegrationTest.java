@@ -692,4 +692,111 @@ public class TaskControllerIntegrationTest extends IntegrationTest {
 
     }
 
+    @Nested
+    @DisplayName("Test delete /tasks/{id}")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class DeleteTest{
+
+        @BeforeEach
+        void setup() {
+            taskRepository.deleteAll().block();
+        }
+
+        @ParameterizedTest(name = "Valid params: taskStatus={0}")
+        @MethodSource("validTaskStatusProvider")
+        @DisplayName("should delete a task with a given id")
+        void delete_succeed(TaskStatus taskStatus) {
+
+            //given
+            var task = taskRepository.save(Task.builder()
+                    .title("title")
+                    .description("description")
+                    .ownerId(UUID.randomUUID())
+                    .creationDate(ZonedDateTime.now())
+                    .status(taskStatus)
+                    .build()).block();
+            var taskId = task.getId();
+
+            //when
+            var response = webTestClient.delete()
+                    .uri(uriBuilder -> uriBuilder.path("/tasks/{id}").build(taskId))
+                    .exchange();
+
+            //then
+            response.expectStatus().isNoContent();
+            Assertions.assertFalse(taskRepository.existsById(taskId).block());
+
+        }
+
+        @ParameterizedTest(name = "Illegal params: taskStatus={0}")
+        @MethodSource("invalidTaskStatusProvider")
+        @DisplayName("should throw IllegalTaskManagementOperationException exception")
+        void delete_validation_error(TaskStatus taskStatus) {
+
+            //given
+            var task = taskRepository.save(Task.builder()
+                    .title("title")
+                    .description("description")
+                    .ownerId(UUID.randomUUID())
+                    .creationDate(ZonedDateTime.now())
+                    .status(taskStatus)
+                    .build()).block();
+            var taskId = task.getId();
+
+            //when
+            var response = webTestClient.delete()
+                    .uri(uriBuilder -> uriBuilder.path("/tasks/{id}").build(taskId))
+                    .exchange();
+
+            //then
+            response.expectStatus().isBadRequest()
+                    .expectBody(String.class)
+                    .consumeWith(result -> {
+                        var errorMessage = result.getResponseBody();
+                        assert errorMessage != null;
+                        assert errorMessage.contains("is not valid for deletion");
+                    });
+
+        }
+
+        @Test
+        @DisplayName("should throw NOTFOUND exception")
+        void delete_throw_exception() {
+
+            //given
+            var nonExistingTaskId = UUID.randomUUID();
+
+            //when
+            var response = webTestClient.delete()
+                    .uri(uriBuilder -> uriBuilder.path("/tasks/{id}").build(nonExistingTaskId))
+                    .exchange();
+
+            //then
+            response.expectStatus().isNotFound()
+            .expectBody(String.class)
+                    .consumeWith(result -> {
+                        var errorMessage = result.getResponseBody();
+                        assert errorMessage != null;
+                        assert errorMessage.contains("Task not found");
+                    });
+
+        }
+
+        public Stream<Arguments> invalidTaskStatusProvider() {
+            return Stream.of(
+                    Arguments.of(TaskStatus.IN_PROGRESS),
+                    Arguments.of(TaskStatus.UNDER_REVIEW),
+                    Arguments.of(TaskStatus.APPROVED),
+                    Arguments.of(TaskStatus.DONE)
+            );
+        }
+
+        public Stream<Arguments> validTaskStatusProvider() {
+            return Stream.of(
+              Arguments.of(TaskStatus.TODO),
+              Arguments.of(TaskStatus.CANCELLED)
+            );
+        }
+    }
+
 }

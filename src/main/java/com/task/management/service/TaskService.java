@@ -75,7 +75,7 @@ public class TaskService {
                 .flatMap(task -> {
                     if (!isValidityForRemove(task)) {
                         return Mono.error(new IllegalTaskManagementOperationException(
-                                "The task with id:{%s} not valid for deletion".formatted(task.getId())
+                                "The task with id:{%s} is not valid for deletion".formatted(task.getId())
                         ));
                     }
                     return taskRepository.deleteById(taskId).thenReturn(taskId.toString());

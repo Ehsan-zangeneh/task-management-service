@@ -42,22 +42,44 @@ jacoco {
 }
 
 jacocoTestReport {
+    dependsOn test
     reports {
         xml.required = true
         html.required = true
     }
+    classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: [
+                        'com/task/management/dto/**',
+                        'com/task/management/model/**',
+                        'com/task/management/api/**',
+                        'com/task/management/common/**',
+                ])
+            })
+    )
 }
 jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
     violationRules {
         rule {
+            element = 'CLASS'
+            excludes = [
+                    'com.task.management.dto.*',
+                    'com.task.management.model.*',
+                    'com.task.management.api.*',
+                    'com.task.management.common.*',
+                    'com.task.management.TaskManagementApplication'
+            ]
             limit {
-                minimum = 0.50 // should increase to 0.70
+                counter = 'LINE'
+                minimum = 0.80
             }
         }
     }
 }
 
 check.dependsOn jacocoTestCoverageVerification
+
 
 openApiGenerate {
     generatorName = "spring"
