@@ -24,15 +24,11 @@ services:
       - application-network
 
 
-      #student-service
   task-manager-app:
     image: task-manager
     container_name: task-service
     ports:
       - "9090:9090"
-#      - "5005:5005"
-#    environment: #for attaching the IDE to the container for debugging
-#      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n
     networks:
       - application-network
     depends_on:
