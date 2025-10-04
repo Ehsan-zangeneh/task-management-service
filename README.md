@@ -9,7 +9,7 @@ For executing this app, please make sure that the followings ports are free on y
 
 
 
-### tech stack
+### Tech stack
  - Java 17
  - gradle 
  - Spring boot Webflux
@@ -20,21 +20,35 @@ For executing this app, please make sure that the followings ports are free on y
 <br/>
 
 
-### Instalation
+### Installation
 
-<b style="color:red; font-size:13px">Prerequisite:</b> <b style="font-size:13px">Docker must be running on your environment</b><br/>
+<b style="color:red; font-size:13px">Prerequisite:</b><br/>
+ <b style="font-size:13px">Docker must be running on your environment</b><br/>
+<b style="font-size:13px">Java 17 must be installed</b><br/>
 
-1) Clone the project from github:
-<i><b>git clone https://github.com/Ehsan-zangeneh/task-management-service.git </i></b><br/>
-2) create a Docker network named "application-network": <i><b>docker network create application-network</i></b>
-3) navigate to the project root path
-4) build the project: <i><b>gradle clean build </i></b> [-x test]
-5) create docker image: <i><b>docker build -t task-manager . </i></b> (don't forget the dot)
+####
+<b style="font-size:13px">Clone the project from github:</b><br/>
+<i>git clone https://github.com/Ehsan-zangeneh/task-management-service.git </i><br/>
+
+####
+<b style="font-size:14px"> On Windows</b><br/>
+you can simply run the .bat file: navigate to the project folder and run <i><b>.\run-app-on-windows.bat</b></i><br/>
+
+####
+<b style="font-size:14px"> On Linux</b><br/>
+you can simply run the .sh file: navigate to the project folder and run <i><b>:<br/>
+1) chmod +x run-app-on-linux.sh <br/>
+2) .\run-app-on-linux.sh</b></i>
+
+####
+<b style="font-size:14px"> Manual Deploy</b><br/>
+1) create a Docker network named "application-network": <i><b>docker network create application-network</b></i><br/>
+2) navigate to the project root path<br/>
+4) build the project: <i><b>gradle clean build </i></b> [-x test]<br/>
+5) create docker image: <i><b>docker build -t task-manager . </i></b> (don't forget the dot)<br/>
 6) run docker-compose: <i><b>docker compose up -d</i></b>
 
 
-<b style="font-size:14px"> On Windows</b><br/>
-you can simply run the .bat file: navigate to the project folder and run <i><b>.\run-app-on-windows.bat</i></b><br/>
 
 
 ### Access
