@@ -4,13 +4,15 @@ This is a reactive project for task management and providing  APIs for<br/>
 CRUD operations on tasks.<br/>
 For executing this app, please make sure ports [9090, 8080, 5432] are free on your machine.
 
+
 ### tech stack
  - Java 17
  - gradle 
  - Spring boot Webflux
- - Junit 5 & Test container(for postgreSQL)
+ - Junit 5 & Test container (test coverage ration > 70) 
  - Docker
  - PostgreSQL
+
 
 
 
