@@ -2,40 +2,48 @@
 # Task Management Service
 This is a reactive project for task management and providing  APIs for<br/>
 CRUD operations on tasks.<br/>
-For executing this app, please make sure ports [9090, 8080, 5432] are free on your machine.
+For executing this app, please make sure that the followings ports are free on your machine.<br/>
+- 9090: task-manager application
+- 8080: adminer
+- 5432: PostgreSQL
+
 
 
 ### tech stack
  - Java 17
  - gradle 
  - Spring boot Webflux
- - Junit 5 & Test container (test coverage ration > 70) 
+ - Junit 5 & Testcontainer
  - Docker
  - PostgreSQL
 
-
+<br/>
 
 
 ### Instalation
 
-first clone the project from github <br/>
+<b style="color:red; font-size:13px">Prerequisite:</b> <b style="font-size:13px">Docker must be running on your environment</b><br/>
+
+1) Clone the project from github:
 <i><b>git clone https://github.com/Ehsan-zangeneh/task-management-service.git </i></b><br/>
+2) create a Docker network named "application-network": <i><b>docker network create application-network</i></b>
+3) navigate to the project root path
+4) build the project: <i><b>gradle clean build </i></b> [-x test]
+5) create docker image: <i><b>docker build -t task-manager . </i></b> (don't forget the dot)
+6) run docker-compose: <i><b>docker compose up -d</i></b>
 
 
-on the <b>Windows OS</b> you can simply run the .bat file:<br/>
-navigate to the project folder and run:
-<i><b>.\run-app-on-windows.bat</i></b><br/>
+<b style="font-size:14px"> On Windows</b><br/>
+you can simply run the .bat file: navigate to the project folder and run <i><b>.\run-app-on-windows.bat</i></b><br/>
 
-you need docker be running on your environment. Also, a docker network named<br/>
-"application-network" is required.
-1) build the project: <i><b>gradle clean build </i></b> [-x test]
-2) create docker image: <i><b>docker build -t task-manager . </i></b> (don't forget the dot)
-3) run docker-compose: <i><b>docker compose up -d</i></b>
 
 ### Access
  the swagger ui: http://localhost:9090/swagger-ui.html <br/>
- adminer to connect to the database: http://localhost:8080/ <br/>
- system :  <i>PostgreSQL<i><br/>
+
+ <b style="font-size:14px"> Optional</b><br/>
+you can use adminer to connect to the database: http://localhost:8080/ with the following credentials:<br/>
+ system :  <i>PostgreSQL</i><br/>
  username: <i>ehsan</i><br/>
  password: <i>ehsan</i><br/>
  database: <i>task_db</i>
+<br/>
